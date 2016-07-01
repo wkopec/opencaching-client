@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">OC Client</string>
+    <string name="title_activity_maps">Opencaching Map</string>
+    <string name="action_settings">Ustawienia</string>
+    <string name="action_download_caches">Pobierz_skrzynki</string>
+    <string name="action_exit">Wyjście</string>
+    <string name="title_activity_cache">CacheActivity</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="title_section1">Opis</string>
+    <string name="title_section2">Logi</string>
+    <string name="title_section3">Zdjęcia</string>
+</resources>
