@@ -3,6 +3,8 @@ package com.kopec.wojciech.occlient;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +27,10 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static String waypoint;
 
+    private RecyclerView mRecyclerView;
+    private LogAdapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+
     public FragmentCacheLogs() {
     }
 
@@ -46,7 +52,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
         final View rootView = inflater.inflate(R.layout.fragment_cache_logs, container, false);
 
         //Request
-        final int numberOfLogs = 3;
+        final int numberOfLogs = 100;
         final String tag_json_obj = "json_obj_req";
         String url = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs ;
         final String TAG = MapsActivity.class.getSimpleName();
@@ -58,22 +64,36 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                 Log.d(TAG, response.toString());
 
                 try {
-                    ArrayList<CacheLog> logList = new ArrayList<>();
+                    CacheLog.List logList = new CacheLog.List();
                     JSONArray list = response.getJSONArray("latest_logs");
 
                     for(int i=0; i<list.length(); i++){
                         JSONObject obj = list.getJSONObject(i);
                         JSONObject loginObj = obj.getJSONObject("user");
-                        logList.add(new CacheLog(obj.getString("date"), obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
+
+                        String date = obj.getString("date");
+                        String[] parts = date.split("T");
+                        String day = parts[0];
+                        //String time = parts[1];
+                        Log.d("Dzień", day);
+                        //Log.d("Godzina", time);
+
+                        logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
                     }
-                    Log.d("LOBIEKT#####", logList.get(0).username);
 
+                    mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+                    mLayoutManager = new LinearLayoutManager(getActivity());
+                    mRecyclerView.setLayoutManager(mLayoutManager);
+                    mAdapter = new LogAdapter();
+                    mAdapter.addLogs(logList);
 
+                    mRecyclerView.setAdapter(mAdapter);
 
-                    WebView webView = (WebView) rootView.findViewById(R.id.webView);
-                    //webView.getSettings().setJavaScriptEnabled(true);
+                    //mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-                    //webView.loadDataWithBaseURL("", description, "text/html", "UTF-8", "");
+//                    logAdapter = new LogAdapter();
+//                    recyclerView.setAdapter(logAdapter);
+
 
                 } catch (JSONException e) {
                     e.printStackTrace();

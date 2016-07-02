@@ -55,14 +55,13 @@ public class MapsActivity  extends AppCompatActivity implements OnMapReadyCallba
         mapFragment.getMapAsync(this);
 
         locationMangaer = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
-        LatLng faisUj = new LatLng(50.029591, 19.905876);
+        LatLng faisUj = new LatLng(50.029591, 19.905875);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(faisUj, 14));
         mMap.setOnMarkerClickListener(this);
         //mMap.setMapType(googleMap.MAP_TYPE_SATELLITE);
