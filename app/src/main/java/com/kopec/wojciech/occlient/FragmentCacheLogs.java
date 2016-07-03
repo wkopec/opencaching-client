@@ -75,14 +75,13 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                         String[] parts = date.split("T");
                         String day = parts[0];
                         //String time = parts[1];
-                        Log.d("Dzień", day);
-                        //Log.d("Godzina", time);
 
                         logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
                     }
 
                     mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
                     mLayoutManager = new LinearLayoutManager(getActivity());
+                    mLayoutManager.setAutoMeasureEnabled(false);
                     mRecyclerView.setLayoutManager(mLayoutManager);
                     mAdapter = new LogAdapter();
                     mAdapter.addLogs(logList);
