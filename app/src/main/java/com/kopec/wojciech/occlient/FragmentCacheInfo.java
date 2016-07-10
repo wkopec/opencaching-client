@@ -33,8 +33,7 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
 
     //OnCreate
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         final View rootView = inflater.inflate(R.layout.fragment_cache_info, container, false);
         //String waypoint = "OP85LA";

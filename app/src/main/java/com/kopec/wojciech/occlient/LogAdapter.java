@@ -1,6 +1,7 @@
 package com.kopec.wojciech.occlient;
 
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +37,6 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         holder.CommentWebView.getSettings().setJavaScriptEnabled(true);
         holder.CommentWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         holder.CommentWebView.loadDataWithBaseURL(null, cacheLog.comment, "text/html", "UTF-8", null);
-        //holder.CommentWebView.
 
         if(cacheLog.type.equals("Found it")){
             holder.foundImageView.setBackgroundResource(R.drawable.log_found);

@@ -57,7 +57,9 @@
     <TextView
         android:id="@+id/commentTextView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:textSize="16dp"
+        android:textColor="#000000"/>
 
 </LinearLayout>
 </android.support.v7.widget.CardView>

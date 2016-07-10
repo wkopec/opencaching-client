@@ -25,7 +25,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
 
-        <activity android:name=".MainActivity"></activity>
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
@@ -41,8 +40,10 @@
         </activity>
         <activity
             android:name=".CacheActivity"
-            android:label="@string/title_activity_cache"
-            android:theme="@style/AppTheme.NoActionBar"></activity><!-- ATTENTION: This was auto-generated to add Google Play services to your project for
+            android:launchMode = "singleInstance"
+            android:theme="@style/AppTheme.NoActionBar">
+
+        </activity><!-- ATTENTION: This was auto-generated to add Google Play services to your project for
      App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information. -->
         <meta-data
             android:name="com.google.android.gms.version"
