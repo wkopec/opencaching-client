@@ -2,6 +2,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.kopec.wojciech.occlient.CacheActivity">
+
+    <item
+        android:id="@+id/navigate_to_cache"
+        android:orderInCategory="100"
+        android:title="@string/action_download_caches"
+        android:icon="@drawable/ic_directions_white_24dp"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

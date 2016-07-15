@@ -11,11 +11,11 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
+import android.widget.TextView;
+import android.widget.Toast;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -59,7 +59,7 @@ public class CacheActivity extends AppCompatActivity {
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section1));
         tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section2));
-        tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section3));
+        //tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section3));
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
         final ViewPager viewPager = (ViewPager) findViewById(R.id.container);
@@ -104,12 +104,39 @@ public class CacheActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
+
+        switch (item.getItemId()) {
+            case R.id.navigate_to_cache:
+                String loc = bundle.getString("location");
+                String[] parts = loc.split("\\|");
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q="+parts[0]+","+parts[1]));
+                Intent chooser = Intent.createChooser(intent, "chuj");
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+
+                return true;
+            case R.id.action_settings:
+                Toast.makeText(CacheActivity.this, "Ustawienia :)", Toast.LENGTH_LONG).show();
+                return true;
+//            case R.id.action_refresh:
+//                // refresh
+//                return true;
+//            case R.id.action_help:
+//                // help action
+//                return true;
+//            case R.id.action_check_updates:
+//                // check for updates action
+//                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
 
-        return super.onOptionsItemSelected(item);
+//        int id = item.getItemId();
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -152,6 +179,18 @@ public class CacheActivity extends AppCompatActivity {
         client.disconnect();
     }
 
+    public void showHint(View view) {
+        TextView nameView = (TextView) findViewById(R.id.show_hint);
+        if(nameView.getVisibility()==View.GONE){
+            nameView.setVisibility(View.VISIBLE);
+        }
+        else{
+            nameView.setVisibility(View.GONE);
+        }
+
+
+    }
+
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
@@ -169,8 +208,8 @@ public class CacheActivity extends AppCompatActivity {
                     return FragmentCacheInfo.newInstance(position, bundle);
                 case 1:
                     return FragmentCacheLogs.newInstance(position, bundle);
-                case 2:
-                    return FragmentCachePhotos.newInstance(position);
+//                case 2:
+//                    return FragmentCachePhotos.newInstance(position);
                 default:
                     return null;
             }
@@ -179,7 +218,7 @@ public class CacheActivity extends AppCompatActivity {
         @Override
         public int getCount() {
             // Show 3 total pages.
-            return 3;
+            return 2;
         }
 
         @Override
@@ -190,8 +229,8 @@ public class CacheActivity extends AppCompatActivity {
                     return getString(R.string.title_section1).toUpperCase(l);
                 case 1:
                     return getString(R.string.title_section2).toUpperCase(l);
-                case 2:
-                    return getString(R.string.title_section3).toUpperCase(l);
+//                case 2:
+//                    return getString(R.string.title_section3).toUpperCase(l);
             }
             return null;
         }

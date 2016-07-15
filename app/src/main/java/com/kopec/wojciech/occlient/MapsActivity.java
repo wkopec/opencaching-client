@@ -84,15 +84,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Intent i = new Intent(MapsActivity.this, CacheActivity.class);
                 i.putExtras(bundle);
                 startActivity(i);
-
             }
         });
 
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-                fragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
+                android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
+                android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                //fragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
                 fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
             }
         });
@@ -348,15 +348,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     bundle.putString("rating", globalCacheMap.get(code).rating);
                     bundle.putString("owner", globalCacheMap.get(code).owner);
                     bundle.putString("recommendations", globalCacheMap.get(code).recommendations);
+                    bundle.putString("location", globalCacheMap.get(code).location);
+                    bundle.putString("caller", "MapsActivity");
 
                     if (!globalFragmentMapCacheInfo.isAdded()) {
+//                        globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
+//                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+//                        fragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
+//                        fragmentTransaction.add;
+//                        fragmentTransaction.add(R.id.mapa, globalFragmentMapCacheInfo).commit();
+
+                        android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
+                        android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                         globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
-                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-                        fragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
-                        fragmentTransaction.add(R.id.mapa, globalFragmentMapCacheInfo).commit();
+                        fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo);
+                        fragmentTransaction.commit();
+
+
                     } else {
+                        android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
                         globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
-                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                        android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                         fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
                     }
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
