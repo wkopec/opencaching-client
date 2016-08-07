@@ -28,6 +28,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:id="@+id/show_hint"
+                android:enabled="false"
                 android:text="Podpowiedź"
                 android:onClick="showHint"/>
 
@@ -37,7 +38,9 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:id="@+id/show_gallery"
-                android:text="Galeria"/>
+                android:enabled="false"
+                android:text="Galeria"
+                android:onClick="showGallery"/>
 
         </LinearLayout>
 
@@ -49,19 +52,33 @@
             android:paddingBottom="5dp"
             android:paddingLeft="10dp"/>
 
-        <Gallery
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/gallery"
-            android:layout_gravity="center_horizontal" />
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:id="@+id/gallery">
+
+            <android.support.v4.view.ViewPager
+                android:id="@+id/pager"
+                android:layout_width="match_parent"
+                android:layout_height="150dp" />
+
+            <com.viewpagerindicator.CirclePageIndicator
+                android:id="@+id/indicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="10dip" />
+
+        </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="OPIS SKRZYNKI"
+            android:text="@string/cache_descripion"
             android:textStyle="bold"
-            android:textSize="22dp"
+            android:textSize="22sp"
             android:textColor="#000000"
             android:paddingBottom="5dp"/>
 
@@ -69,8 +86,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/webView" />
-
-
 
     </LinearLayout>
 </ScrollView>

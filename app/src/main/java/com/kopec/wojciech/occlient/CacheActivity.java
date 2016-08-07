@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.google.android.gms.appindexing.Action;
@@ -180,15 +181,23 @@ public class CacheActivity extends AppCompatActivity {
     }
 
     public void showHint(View view) {
-        TextView nameView = (TextView) findViewById(R.id.show_hint);
+        TextView nameView = (TextView) findViewById(R.id.hint);
         if(nameView.getVisibility()==View.GONE){
             nameView.setVisibility(View.VISIBLE);
         }
         else{
             nameView.setVisibility(View.GONE);
         }
+    }
 
-
+    public void showGallery(View view) {
+        LinearLayout galleryView = (LinearLayout) findViewById(R.id.gallery);
+        if(galleryView.getVisibility()==View.GONE){
+            galleryView.setVisibility(View.VISIBLE);
+        }
+        else{
+            galleryView.setVisibility(View.GONE);
+        }
     }
 
     /**

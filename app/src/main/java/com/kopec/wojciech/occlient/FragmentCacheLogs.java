@@ -1,6 +1,7 @@
 package com.kopec.wojciech.occlient;
 
 import android.annotation.TargetApi;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,6 +21,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class FragmentCacheLogs extends android.support.v4.app.Fragment {
@@ -85,7 +88,6 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                     mRecyclerView.setLayoutManager(mLayoutManager);
                     mAdapter = new LogAdapter();
                     mAdapter.addLogs(logList);
-
                     mRecyclerView.setAdapter(mAdapter);
 
                     //mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -109,4 +111,6 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
 
         return rootView;
     }
+
 }
+
