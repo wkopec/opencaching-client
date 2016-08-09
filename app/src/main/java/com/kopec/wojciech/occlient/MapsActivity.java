@@ -1,12 +1,9 @@
 package com.kopec.wojciech.occlient;
 
 import android.Manifest;
-import android.app.FragmentTransaction;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
@@ -21,7 +18,6 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -36,12 +32,16 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DialogInterface.OnClickListener {
+//public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DialogInterface.OnClickListener {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static GoogleMap mMap;
     private ArrayList<String> globalWaypointList = new ArrayList<>();
     private HashMap<String, CacheInfo> globalCacheMap = new HashMap<>();
     private FragmentMapCacheInfo globalFragmentMapCacheInfo = new FragmentMapCacheInfo();
+    private Marker lastSelectedMarker;
+    private String lastSelectedMarkerType;
+    private float zIndexOfMarker = 1;
     private LocationManager locationMangaer;
 
     @Override
@@ -60,8 +60,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
-        LatLng faisUj = new LatLng(50.029591, 19.905875);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(faisUj, 14));
+        LatLng faisUJ = new LatLng(50.029591, 19.905875);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(faisUJ, 14));
         mMap.getUiSettings().setMapToolbarEnabled(false);
         //mMap.getUiSettings().setZoomControlsEnabled(true);
         //mMap.setMapType(googleMap.MAP_TYPE_SATELLITE);
@@ -90,9 +90,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
+                setPreviousMarkerDisable();
+                lastSelectedMarker = null;
                 android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
                 android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                //fragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
                 fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
             }
         });
@@ -108,40 +109,28 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 });
     }
 
-    @Override
-    public void onClick(DialogInterface dialog, int which) {
-        LocationListener locationListener = new MyLocationListener();
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        locationMangaer.requestLocationUpdates(LocationManager
-                .GPS_PROVIDER, 5000, 10, (android.location.LocationListener) locationListener);
-    }
-
     //MENU
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
+    private MenuItem menuItem;
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Take appropriate action for each action item click
         switch (item.getItemId()) {
             case R.id.action_download_caches:
+                menuItem = item;
+                menuItem.setActionView(R.layout.progressbar);
+                menuItem.expandActionView();
+
                 LatLng mapCenterLatLng = mMap.getCameraPosition().target;
                 String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
-                waypointsRequest(mapCenterString, "100", "03767B69-4960-065E-0A2A-984EDE6BBC83");
+                //String user_uuid = "03767B69-4960-065E-0A2A-984EDE6BBC83";      //Volframs uuid
+                String user_uuid = "";
+                String limit = "100";
+                waypointsRequest(mapCenterString, limit, user_uuid);
 
                 return true;
 //            case R.id.action_location_found:
@@ -172,7 +161,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                //Log.d(TAG, response.toString());
                 try {
                     JSONArray list = response.getJSONArray("results");
                     for (int i = 0; i < list.length(); i++) {
@@ -195,6 +183,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (!newWaypoints.isEmpty()) {
                         cachesRequest(newWaypoints);
                     }
+                    else{
+                        menuItem.collapseActionView();
+                        menuItem.setActionView(null);
+                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -204,6 +196,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onErrorResponse(VolleyError error) {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
+                menuItem.collapseActionView();
+                menuItem.setActionView(null);
                 Toast.makeText(MapsActivity.this,
                         "Błąd połączenia z serwerem", Toast.LENGTH_LONG).show();
             }
@@ -263,6 +257,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .title(cacheMap.get(waypointList.get(i)).name)
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional))
                         .snippet(cacheMap.get(waypointList.get(i)).code + "|" + cacheMap.get(waypointList.get(i)).name)
+                        //.zIndex(0.0001f)
                 );
             } else if (cacheMap.get(waypointList.get(i)).type.equals("Other")) {
                 mMap.addMarker(new MarkerOptions()
@@ -321,10 +316,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .snippet(cacheMap.get(waypointList.get(i)).code + "|" + cacheMap.get(waypointList.get(i)).name)
                 );
             }
+            zIndexOfMarker += 0.1f;
+            Log.d("Float !!!", Float.toString(zIndexOfMarker));
         }
+
+        menuItem.collapseActionView();
+        menuItem.setActionView(null);
     }
 
     public void cacheRequest(final String code, final Marker marker) {
+        if(marker.equals(lastSelectedMarker)) return;
         String tag_json_obj = "json_obj_req";
         String url = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations&cache_code=" + code + "";
         final String TAG = MapsActivity.class.getSimpleName();
@@ -352,18 +353,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     bundle.putString("caller", "MapsActivity");
 
                     if (!globalFragmentMapCacheInfo.isAdded()) {
-//                        globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
-//                        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
-//                        fragmentTransaction.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
-//                        fragmentTransaction.add;
-//                        fragmentTransaction.add(R.id.mapa, globalFragmentMapCacheInfo).commit();
 
                         android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
                         android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                         globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
                         fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo);
                         fragmentTransaction.commit();
-
 
                     } else {
                         android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
@@ -372,7 +367,81 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
                     }
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
-                    marker.showInfoWindow();
+
+                    if(globalCacheMap.get(code).type.equals("Traditional")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Other")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_unknown_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Quiz")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_quiz_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Multi")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_multi_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Virtual")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_virtual_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Own")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_own_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Moving")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_moving_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Event")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_event_selected));
+                    }
+                    else if(globalCacheMap.get(code).type.equals("Webcam")){
+                        if(lastSelectedMarker != null){
+                            setPreviousMarkerDisable();
+                        }
+                        lastSelectedMarker = marker;
+                        lastSelectedMarkerType = globalCacheMap.get(code).type;
+                        marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_webcam_selected));
+                    }
+
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -381,32 +450,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onErrorResponse(VolleyError error) {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
+                Toast.makeText(MapsActivity.this,
+                        "Błąd połączenia z serwerem", Toast.LENGTH_LONG).show();
             }
         });
         AppController.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
     }
 
-    //Listener
-    private class MyLocationListener implements LocationListener {
-        @Override
-        public void onLocationChanged(Location loc) {
-        }
-
-//        @Override
-//        public void onProviderDisabled(String provider) {
-//            // TODO Auto-generated method stub
-//        }
-//
-//        @Override
-//        public void onProviderEnabled(String provider) {
-//            // TODO Auto-generated method stub
-//        }
-//
-//        @Override
-//        public void onStatusChanged(String provider,
-//                                    int status, Bundle extras) {
-//            // TODO Auto-generated method stub
-//        }
+    public void setPreviousMarkerDisable(){
+        if(lastSelectedMarkerType.equals("Traditional"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional));
+        else if(lastSelectedMarkerType.equals("Other"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_unknown));
+        else if(lastSelectedMarkerType.equals("Quiz"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_quiz));
+        else if(lastSelectedMarkerType.equals("Multi"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_multi));
+        else if(lastSelectedMarkerType.equals("Virtual"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_virtual));
+        else if(lastSelectedMarkerType.equals("Own"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_own));
+        else if(lastSelectedMarkerType.equals("Moving"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_moving));
+        else if(lastSelectedMarkerType.equals("Event"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_event));
+        else if(lastSelectedMarkerType.equals("Webcam"))
+            lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_webcam));
     }
 
 }

@@ -90,12 +90,6 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                     mAdapter.addLogs(logList);
                     mRecyclerView.setAdapter(mAdapter);
 
-                    //mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-//                    logAdapter = new LogAdapter();
-//                    recyclerView.setAdapter(logAdapter);
-
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -111,6 +105,5 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
 
         return rootView;
     }
-
 }
 

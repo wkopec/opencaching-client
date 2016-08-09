@@ -17,8 +17,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
+//import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.Locale;
@@ -89,11 +88,6 @@ public class CacheActivity extends AppCompatActivity {
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     @Override
@@ -140,49 +134,13 @@ public class CacheActivity extends AppCompatActivity {
 //        return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Cache Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app URL is correct.
-                Uri.parse("android-app://com.kopec.wojciech.occlient/http/host/path")
-        );
-        AppIndex.AppIndexApi.start(client, viewAction);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Cache Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app URL is correct.
-                Uri.parse("android-app://com.kopec.wojciech.occlient/http/host/path")
-        );
-        AppIndex.AppIndexApi.end(client, viewAction);
-        client.disconnect();
-    }
-
     public void showHint(View view) {
         TextView nameView = (TextView) findViewById(R.id.hint);
+        LinearLayout galleryView = (LinearLayout) findViewById(R.id.gallery);
         if(nameView.getVisibility()==View.GONE){
+            if(galleryView.getVisibility()==View.VISIBLE){
+                galleryView.setVisibility(View.GONE);
+            }
             nameView.setVisibility(View.VISIBLE);
         }
         else{
@@ -191,8 +149,12 @@ public class CacheActivity extends AppCompatActivity {
     }
 
     public void showGallery(View view) {
+        TextView nameView = (TextView) findViewById(R.id.hint);
         LinearLayout galleryView = (LinearLayout) findViewById(R.id.gallery);
         if(galleryView.getVisibility()==View.GONE){
+            if(nameView.getVisibility()==View.VISIBLE){
+                nameView.setVisibility(View.GONE);
+            }
             galleryView.setVisibility(View.VISIBLE);
         }
         else{
@@ -226,7 +188,7 @@ public class CacheActivity extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            // Show 3 total pages.
+            // Show 2 total pages.
             return 2;
         }
 

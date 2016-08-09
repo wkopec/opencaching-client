@@ -32,8 +32,6 @@ public final class PlaceSlideFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         ImageView image = new ImageView(getActivity());
-        //image.setImageResource(imageResourceId);
-        //image.setImageDrawable(imageResourceId);
         image.setImageBitmap(imageResourceId);
 
         LinearLayout layout = new LinearLayout(getActivity());
