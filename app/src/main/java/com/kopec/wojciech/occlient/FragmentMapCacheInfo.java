@@ -45,9 +45,9 @@ public class FragmentMapCacheInfo extends android.support.v4.app.Fragment{
 
 
         nameView.setText(globalBundle.getString("name"));
-        typeView.setText("(" + globalBundle.getString("type") + ")");
-        sizeView.setText(globalBundle.getString("size"));
-        ratingView.setText(globalBundle.getString("rating") + "/5");
+        typeView.setText("(" + checkType(globalBundle.getString("type")) + ")");
+        sizeView.setText(checkSize(globalBundle.getString("size")));
+        ratingView.setText(checkRating(globalBundle.getString("rating")));
         ownerView.setText(globalBundle.getString("owner"));
         recommendationsView.setText(globalBundle.getString("recommendations"));
 
@@ -63,5 +63,35 @@ public class FragmentMapCacheInfo extends android.support.v4.app.Fragment{
         });
 
         return myInflatedView;
+    }
+
+    private String checkType(String type){
+        if(type.equals("Traditional")) return "Tradycyjna";
+        if(type.equals("Other")) return "Nietypowa";
+        if(type.equals("Quiz")) return "Quiz";
+        if(type.equals("Multi")) return "Multicache";
+        if(type.equals("Virtual")) return "Wirtualna";
+        if(type.equals("Own")) return "Own cache";
+        if(type.equals("Moving")) return "Mobilna";
+        if(type.equals("Event")) return "Wydarzenie";
+        if(type.equals("Webcam")) return "Webcam";
+        return type;
+    }
+
+    private String checkSize(String size){
+        if(size.equals("small")) return "mała";
+        if(size.equals("micro")) return "mikro";
+        if(size.equals("regular")) return "normalna";
+        if(size.equals("large")) return "duża";
+        if(size.equals("xlarge")) return "bardzo duża";
+        if(size.equals("none")) return "bez pojemnika";
+        if(size.equals("nano")) return "nano";
+        if(size.equals("other")) return "inna";
+        return size;
+    }
+
+    private String checkRating(String rating){
+        if(rating.equals("null")) return "--/5";
+        return rating + "/5";
     }
 }

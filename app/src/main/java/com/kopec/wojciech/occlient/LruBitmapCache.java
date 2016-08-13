@@ -1,7 +1,6 @@
 package com.kopec.wojciech.occlient;
 
 import com.android.volley.toolbox.ImageLoader.ImageCache;
-
 import android.graphics.Bitmap;
 import android.support.v4.util.LruCache;
 

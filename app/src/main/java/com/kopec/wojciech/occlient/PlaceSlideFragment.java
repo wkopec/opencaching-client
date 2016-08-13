@@ -14,7 +14,6 @@ import android.widget.LinearLayout;
  * Created by Wojtek on 2016-08-07.
  */
 public final class PlaceSlideFragment extends Fragment {
-    //int imageResourceId;
     Bitmap imageResourceId;
 
     public PlaceSlideFragment(Bitmap i) {
@@ -35,7 +34,6 @@ public final class PlaceSlideFragment extends Fragment {
         image.setImageBitmap(imageResourceId);
 
         LinearLayout layout = new LinearLayout(getActivity());
-        //layout.setLayoutParams(new LayoutParams());
 
         layout.setGravity(Gravity.CENTER);
         layout.addView(image);

@@ -1,6 +1,5 @@
 package com.kopec.wojciech.occlient;
 
-
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

@@ -90,8 +90,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                setPreviousMarkerDisable();
-                lastSelectedMarker = null;
+                if(lastSelectedMarker != null){
+                    setPreviousMarkerDisable();
+                    lastSelectedMarker = null;
+                }
                 android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
                 android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
@@ -257,7 +259,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .title(cacheMap.get(waypointList.get(i)).name)
                         .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional))
                         .snippet(cacheMap.get(waypointList.get(i)).code + "|" + cacheMap.get(waypointList.get(i)).name)
-                        //.zIndex(0.0001f)
                 );
             } else if (cacheMap.get(waypointList.get(i)).type.equals("Other")) {
                 mMap.addMarker(new MarkerOptions()
@@ -316,8 +317,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         .snippet(cacheMap.get(waypointList.get(i)).code + "|" + cacheMap.get(waypointList.get(i)).name)
                 );
             }
-            zIndexOfMarker += 0.1f;
-            Log.d("Float !!!", Float.toString(zIndexOfMarker));
         }
 
         menuItem.collapseActionView();

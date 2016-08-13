@@ -13,7 +13,9 @@ import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -105,13 +107,12 @@ public class CacheActivity extends AppCompatActivity {
                 String loc = bundle.getString("location");
                 String[] parts = loc.split("\\|");
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q="+parts[0]+","+parts[1]));
-                Intent chooser = Intent.createChooser(intent, "chuj");
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
 
                 return true;
             case R.id.action_settings:
-                Toast.makeText(CacheActivity.this, "Ustawienia :)", Toast.LENGTH_LONG).show();
+
                 return true;
 //            case R.id.action_refresh:
 //                // refresh
@@ -160,6 +161,7 @@ public class CacheActivity extends AppCompatActivity {
         else{
             galleryView.setVisibility(View.GONE);
         }
+
     }
 
     /**

@@ -1,7 +1,6 @@
 package com.kopec.wojciech.occlient;
 
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,8 +30,6 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         CacheLog cacheLog = cacheList.get(position);
         holder.dateTextView.setText(cacheLog.date);
         holder.usernameTextView.setText(cacheLog.username);
-        //holder.commentTextView.setText(Html.fromHtml(cacheLog.comment));
-        //holder.commentTextView.setText(cacheLog.comment);
 
         holder.CommentWebView.getSettings().setJavaScriptEnabled(true);
         holder.CommentWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
