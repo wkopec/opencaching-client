@@ -23,10 +23,6 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static String waypoint;
 
-    private RecyclerView mRecyclerView;
-    private LogAdapter mAdapter;
-    private RecyclerView.LayoutManager mLayoutManager;
-
     public FragmentCacheLogs() {
     }
 
@@ -75,11 +71,11 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                         logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
                     }
 
-                    mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
-                    mLayoutManager = new LinearLayoutManager(getActivity());
+                    RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+                    RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
                     mLayoutManager.setAutoMeasureEnabled(false);
                     mRecyclerView.setLayoutManager(mLayoutManager);
-                    mAdapter = new LogAdapter();
+                    LogAdapter mAdapter = new LogAdapter();
                     mAdapter.addLogs(logList);
                     mRecyclerView.setAdapter(mAdapter);
 

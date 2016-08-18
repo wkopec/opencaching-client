@@ -17,10 +17,8 @@ import android.widget.TextView;
 public class FragmentMapCacheInfo extends android.support.v4.app.Fragment{
     private static Bundle globalBundle;
 
-
     public static FragmentMapCacheInfo newInstance(Bundle bundle) {
         globalBundle = bundle;
-        Log.d("Bundle LOG", globalBundle.toString());
         Bundle args = new Bundle();
         FragmentMapCacheInfo fragment = new FragmentMapCacheInfo();
         fragment.setArguments(args);

@@ -11,5 +11,4 @@
         layout="@layout/fragment_maps"
         android:id="@+id/mapa" />
 
-
 </RelativeLayout>

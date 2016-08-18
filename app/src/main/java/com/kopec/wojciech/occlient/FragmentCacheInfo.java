@@ -48,7 +48,6 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
         return fragment;
     }
 
-    //OnCreate
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle bundle) {
         final View rootView = inflater.inflate(R.layout.fragment_cache_info, container, false);
@@ -77,7 +76,6 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                         nameView.setText(response.getString("hint2"));
                     }
 
-
                     final ArrayList<String> bigImgList = new ArrayList<>();
                     final JSONArray images = response.getJSONArray("images");
                     for(int i=0; i<images.length(); i++){
@@ -86,7 +84,6 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                         String bigImg = img.getString("url");
                         String imgDescription = img.getString("caption");
                         boolean is_spoiler = img.getBoolean("is_spoiler");
-                        Log.d("Strona", smallImg);
                         bigImgList.add(bigImg);
                     }
 
@@ -97,7 +94,7 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                             try {
                                 for(int i=0; i<bigImgList.size(); i++) {
                                     InputStream in = new URL(bigImgList.get(i)).openStream();
-                                    Bitmap bmp = BitmapFactory.decodeStream(in);;
+                                    Bitmap bmp = BitmapFactory.decodeStream(in);
                                     imgDraws.add(bmp);
                                 }
                             } catch (Exception e) {
@@ -110,38 +107,39 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                         @Override
                         protected void onPostExecute(Void result) {
 
-                            if(imgDraws.size() != 0){
-                                Button button = (Button) getView().findViewById(R.id.show_gallery);
-                                button.setEnabled(true);
-                            }
+                            if(!imgDraws.isEmpty()){
+                                mAdapter = new PlaceSlidesFragmentAdapter(getActivity()
+                                        .getSupportFragmentManager(), imgDraws);
+                                mPager = (ViewPager) rootView.findViewById(R.id.pager);
+                                mPager.setAdapter(mAdapter);
 
-                            mAdapter = new PlaceSlidesFragmentAdapter(getActivity()
-                                    .getSupportFragmentManager(), imgDraws);
-
-                            mPager = (ViewPager) rootView.findViewById(R.id.pager);
-                            mPager.setAdapter(mAdapter);
-
-                            mIndicator = (CirclePageIndicator) rootView.findViewById(R.id.indicator);
-                            mIndicator.setViewPager(mPager);
-                            ((CirclePageIndicator) mIndicator).setSnap(true);
-                            ((CirclePageIndicator) mIndicator).setRadius(16);
-                            ((CirclePageIndicator) mIndicator).setFillColor(R.color.colorPrimaryDark);
-                            mIndicator.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-                                @Override
-                                public void onPageSelected(int position) {
+                                mIndicator = (CirclePageIndicator) rootView.findViewById(R.id.indicator);
+                                mIndicator.setViewPager(mPager);
+                                ((CirclePageIndicator) mIndicator).setSnap(true);
+                                ((CirclePageIndicator) mIndicator).setRadius(16);
+                                ((CirclePageIndicator) mIndicator).setFillColor(R.color.colorPrimaryDark);
+                                mIndicator.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+                                    @Override
+                                    public void onPageSelected(int position) {
 //                                    Toast.makeText(FragmentCacheInfo.this.getActivity(),
 //                                            "Changed to page " + position,
 //                                            Toast.LENGTH_SHORT).show();
-                                }
+                                    }
+                                    @Override
+                                    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-                                @Override
-                                public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                                }
+                                    }
                                     @Override
                                     public void onPageScrollStateChanged(int state) {
 
                                     }
-                            });
+                                });
+
+                                Button button = (Button) getView().findViewById(R.id.show_gallery);
+                                button.setEnabled(true);
+                            }
+
+
                         }
                     }.execute();
 
@@ -161,3 +159,10 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
         return rootView;
     }
 }
+
+
+
+
+
+
+

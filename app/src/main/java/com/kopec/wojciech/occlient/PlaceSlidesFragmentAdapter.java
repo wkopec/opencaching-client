@@ -23,7 +23,6 @@ public class PlaceSlidesFragmentAdapter extends FragmentPagerAdapter implements
         mCount = imgDraws.size();
     }
 
-
     protected static final int[] ICONS = new int[] {};
 
     @Override

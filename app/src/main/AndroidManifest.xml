@@ -3,15 +3,13 @@
     package="com.kopec.wojciech.occlient">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:hardwareAccelerated="true"
         android:name=".AppController"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/app_icon"
         android:label="@string/title_activity_maps"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -44,5 +42,4 @@
             android:value="@string/google_maps_key" />
 
     </application>
-
 </manifest>
