@@ -14,18 +14,18 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.TextView;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
+import android.widget.Toast;
 import com.viewpagerindicator.CirclePageIndicator;
 import com.viewpagerindicator.PageIndicator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class FragmentCacheInfo extends android.support.v4.app.Fragment {
@@ -52,31 +52,25 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle bundle) {
         final View rootView = inflater.inflate(R.layout.fragment_cache_info, container, false);
 
-        final String tag_json_obj = "json_obj_req";
-        String url = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" +  globalBundle.getString("waypoint") + "&fields=description|hint2|images";
-        final String TAG = MapsActivity.class.getSimpleName();
+        ////////
 
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+        final CacheObject cacheObject = new CacheObject();
+        new AsyncTask<Void, Void, Void>() {
+            @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
-            public void onResponse(JSONObject response) {
-                Log.d(TAG, response.toString());
-
+            protected Void doInBackground(Void... params) {
+                ArrayList<String> waypointList = new ArrayList<>();
                 try {
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" +  globalBundle.getString("waypoint") + "&fields=description|hint2|images";
+                    JSONObject response = jsonObjectRequest(new URL(urlString));
+
                     String description = response.getString("description");
                     Log.d("Description", description);
-                    String htmlText = description.replaceAll("<img", "<img style=\"max-width:100%; height: auto; width: auto;\"");
-                    WebView webView = (WebView) getView().findViewById(R.id.webView);
-                    webView.getSettings().setJavaScriptEnabled(true);
-                    webView.loadDataWithBaseURL("", htmlText, "text/html", "UTF-8", "");
+                    description.replaceAll("<img", "<img style=\"max-width:100%; height: auto; width: auto;\"");
+                    cacheObject.description = description;
 
-                    if(!response.getString("hint2").equals("")){
-                        Button button = (Button) getView().findViewById(R.id.show_hint);
-                        button.setEnabled(true);
-                        TextView nameView = (TextView) getView().findViewById(R.id.hint);
-                        nameView.setText(response.getString("hint2"));
-                    }
+                    cacheObject.hint = response.getString("hint2");
 
-                    final ArrayList<String> bigImgList = new ArrayList<>();
                     final JSONArray images = response.getJSONArray("images");
                     for(int i=0; i<images.length(); i++){
                         JSONObject img = images.getJSONObject(i);
@@ -84,80 +78,120 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                         String bigImg = img.getString("url");
                         String imgDescription = img.getString("caption");
                         boolean is_spoiler = img.getBoolean("is_spoiler");
-                        bigImgList.add(bigImg);
+                        cacheObject.bigImgList.add(bigImg);
                     }
 
-                    final ArrayList<Bitmap> imgDraws = new ArrayList<>();
-                    new AsyncTask<Void, Void, Void>() {
+                } catch (UnknownHostException uhe){
+                    getActivity().runOnUiThread(new Runnable(){
                         @Override
-                        protected Void doInBackground(Void... params) {
-                            try {
-                                for(int i=0; i<bigImgList.size(); i++) {
-                                    InputStream in = new URL(bigImgList.get(i)).openStream();
-                                    Bitmap bmp = BitmapFactory.decodeStream(in);
-                                    imgDraws.add(bmp);
-                                }
-                            } catch (Exception e) {
-                                Log.d("ERROR", e.toString());
-                            }
-                            return null;
+                        public void run(){
+                            Toast.makeText(getActivity(), "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
                         }
+                    });
 
-                        @TargetApi(Build.VERSION_CODES.M)
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void result){
+                WebView webView = (WebView) getView().findViewById(R.id.webView);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.loadDataWithBaseURL("", cacheObject.description, "text/html", "UTF-8", "");
+
+                if(!cacheObject.hint.equals("")){
+                    Button button = (Button) getView().findViewById(R.id.show_hint);
+                    button.setEnabled(true);
+                    TextView nameView = (TextView) getView().findViewById(R.id.hint);
+                    nameView.setText(cacheObject.hint);
+                }
+
+            }
+        }.execute();
+
+
+
+        final ArrayList<Bitmap> imgDraws = new ArrayList<>();
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    if(cacheObject.bigImgList != null){
+                        for(int i=0; i<cacheObject.bigImgList.size(); i++) {
+                            InputStream in = new URL(cacheObject.bigImgList.get(i)).openStream();
+                            Bitmap bmp = BitmapFactory.decodeStream(in);
+                            imgDraws.add(bmp);
+                        }
+                    }
+
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
+                }
+                return null;
+            }
+
+            @TargetApi(Build.VERSION_CODES.M)
+            @Override
+            protected void onPostExecute(Void result) {
+
+                if(!imgDraws.isEmpty()){
+                    mAdapter = new PlaceSlidesFragmentAdapter(getActivity()
+                            .getSupportFragmentManager(), imgDraws);
+                    mPager = (ViewPager) rootView.findViewById(R.id.pager);
+                    mPager.setAdapter(mAdapter);
+
+                    mIndicator = (CirclePageIndicator) rootView.findViewById(R.id.indicator);
+                    mIndicator.setViewPager(mPager);
+                    ((CirclePageIndicator) mIndicator).setSnap(true);
+                    ((CirclePageIndicator) mIndicator).setRadius(16);
+                    ((CirclePageIndicator) mIndicator).setFillColor(R.color.colorPrimaryDark);
+                    mIndicator.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
                         @Override
-                        protected void onPostExecute(Void result) {
-
-                            if(!imgDraws.isEmpty()){
-                                mAdapter = new PlaceSlidesFragmentAdapter(getActivity()
-                                        .getSupportFragmentManager(), imgDraws);
-                                mPager = (ViewPager) rootView.findViewById(R.id.pager);
-                                mPager.setAdapter(mAdapter);
-
-                                mIndicator = (CirclePageIndicator) rootView.findViewById(R.id.indicator);
-                                mIndicator.setViewPager(mPager);
-                                ((CirclePageIndicator) mIndicator).setSnap(true);
-                                ((CirclePageIndicator) mIndicator).setRadius(16);
-                                ((CirclePageIndicator) mIndicator).setFillColor(R.color.colorPrimaryDark);
-                                mIndicator.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-                                    @Override
-                                    public void onPageSelected(int position) {
+                        public void onPageSelected(int position) {
 //                                    Toast.makeText(FragmentCacheInfo.this.getActivity(),
 //                                            "Changed to page " + position,
 //                                            Toast.LENGTH_SHORT).show();
-                                    }
-                                    @Override
-                                    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-                                    }
-                                    @Override
-                                    public void onPageScrollStateChanged(int state) {
-
-                                    }
-                                });
-
-                                Button button = (Button) getView().findViewById(R.id.show_gallery);
-                                button.setEnabled(true);
-                            }
-
+                        }
+                        @Override
+                        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
                         }
-                    }.execute();
+                        @Override
+                        public void onPageScrollStateChanged(int state) {
 
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                        }
+                    });
+
+                    Button button = (Button) getView().findViewById(R.id.show_gallery);
+                    button.setEnabled(true);
                 }
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-            }
-        });
-
-        AppController.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
+        }.execute();
 
         return rootView;
     }
+
+    private JSONObject jsonObjectRequest(URL url) throws JSONException, IOException {
+        BufferedReader reader;
+        reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuffer buffer = new StringBuffer();
+        int read;
+        char[] chars = new char[1024];
+        while ((read = reader.read(chars)) != -1) {
+            buffer.append(chars, 0, read);
+        }
+        JSONObject jsonObj = new JSONObject(String.valueOf(buffer));
+        return jsonObj;
+    }
+
+    class CacheObject{
+        String description = "";
+        String hint = "";
+        ArrayList<String> bigImgList = new ArrayList<>();
+    }
+
 }
 
 

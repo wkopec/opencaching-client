@@ -1,7 +1,9 @@
 package com.kopec.wojciech.occlient;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
@@ -10,11 +12,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -26,8 +23,14 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -103,8 +106,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         switch (item.getItemId()) {
             case R.id.action_download_caches:
                 menuItem = item;
-                menuItem.setActionView(R.layout.progressbar);
-                menuItem.expandActionView();
 
                 LatLng mapCenterLatLng = mMap.getCameraPosition().target;
                 String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
@@ -132,22 +133,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     //Requests
-    public void waypointsRequest(String center, String limit, String notFoundBy) {
-        final ArrayList<String> waypointList = new ArrayList<>();
-        String tag_json_obj = "json_obj_req";
-        String url = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + "&limit=" + limit + "&not_found_by=" + notFoundBy;
-        final String TAG = MapsActivity.class.getSimpleName();
 
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+    public void waypointsRequest(final String center, final String limit, final String notFoundBy){
+
+        final ArrayList<String> newWaypoints = new ArrayList<>();
+        new AsyncTask<Void, Void, Void>() {
+            @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
-            public void onResponse(JSONObject response) {
+            protected void onPreExecute() {
+                super.onPreExecute();
+                menuItem.setActionView(R.layout.progressbar);
+                menuItem.expandActionView();
+            }
+            @Override
+            protected Void doInBackground(Void... params) {
+                ArrayList<String> waypointList = new ArrayList<>();
                 try {
-                    JSONArray list = response.getJSONArray("results");
+                    String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + "&limit=" + limit + "&not_found_by=" + notFoundBy;
+                    JSONObject jsonObj = jsonObjectRequest(new URL(urlString));
+
+                    JSONArray list = jsonObj.getJSONArray("results");
                     for (int i = 0; i < list.length(); i++) {
                         waypointList.add(list.getString(i));
                     }
 
-                    ArrayList<String> newWaypoints = new ArrayList<>();
                     if (!globalWaypointList.isEmpty()) {
                         for (int i = 0; i < waypointList.size(); i++) {
                             if (!globalWaypointList.contains(waypointList.get(i))) {
@@ -160,67 +169,71 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         globalWaypointList.addAll(newWaypoints);
                     }
 
-                    if (!newWaypoints.isEmpty()) {
-                        cachesRequest(newWaypoints);
-                    } else {
-                        menuItem.collapseActionView();
-                        menuItem.setActionView(null);
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                } catch (UnknownHostException uhe){
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            Toast.makeText(MapsActivity.this, "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
+                }
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Void result) {
+                if (!newWaypoints.isEmpty()) {
+                    cachesRequest(newWaypoints);
+                } else {
+                    menuItem.collapseActionView();
+                    menuItem.setActionView(null);
                 }
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-                menuItem.collapseActionView();
-                menuItem.setActionView(null);
-                Toast.makeText(MapsActivity.this,
-                        "Błąd połączenia z serwerem", Toast.LENGTH_LONG).show();
-            }
-        });
-
-        AppController.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
+        }.execute();
     }
 
     public void cachesRequest(final ArrayList<String> waypointList) {
-        String codes = waypointList.get(0);
-        if (waypointList.size() > 1) {
-            for (int i = 1; i < waypointList.size(); i++) {
-                codes += "|" + waypointList.get(i);
-            }
-        }
 
-        String tag_json_obj = "json_obj_req";
-        String url = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_codes=" + codes + "";
-        final String TAG = MapsActivity.class.getSimpleName();
-
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
-
+        final HashMap<String, CacheInfo> cacheMap = new HashMap<>();
+        new AsyncTask<Void, Void, Void>() {
+            @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
-            public void onResponse(JSONObject response) {
-                //Log.d(TAG, response.toString());
+            protected Void doInBackground(Void... params) {
                 try {
-                    HashMap<String, CacheInfo> cacheMap = new HashMap<>();
+                    String codes = waypointList.get(0);
+                    if (waypointList.size() > 1) {
+                        for (int i = 1; i < waypointList.size(); i++) {
+                            codes += "|" + waypointList.get(i);
+                        }
+                    }
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_codes=" + codes + "";
+                    JSONObject response = jsonObjectRequest(new URL(urlString));
+
                     for (int i = 0; i < waypointList.size(); i++) {
                         JSONObject obj = response.getJSONObject(waypointList.get(i));
                         cacheMap.put(waypointList.get(i), new CacheInfo(obj.getString("code"), obj.getString("name"), obj.getString("location"), obj.getString("type"), obj.getString("status")));
                     }
                     globalCacheMap.putAll(cacheMap);
-                    showWaypoints(cacheMap, waypointList);
-                } catch (JSONException e) {
-                    e.printStackTrace();
+
+                } catch (UnknownHostException uhe){
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            Toast.makeText(MapsActivity.this, "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
                 }
+                return null;
             }
-        }, new Response.ErrorListener() {
+
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
+            protected void onPostExecute(Void result) {
+                showWaypoints(cacheMap, waypointList);
             }
-        });
-        AppController.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
+        }.execute();
     }
 
     public void showWaypoints(HashMap<String, CacheInfo> cacheMap, ArrayList<String> waypointList) {
@@ -301,57 +314,62 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void cacheRequest(final String code, final Marker marker) {
-        if (marker.equals(lastSelectedMarker)) return;
-        String tag_json_obj = "json_obj_req";
-        String url = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations&cache_code=" + code + "";
-        final String TAG = MapsActivity.class.getSimpleName();
 
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+        new AsyncTask<Void, Void, Void>() {
+            @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
-            public void onResponse(JSONObject response) {
-                Log.d(TAG, response.toString());
+            protected Void doInBackground(Void... params) {
                 try {
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations&cache_code=" + code;
+                    JSONObject response = jsonObjectRequest(new URL(urlString));
+
                     JSONObject ownerObj = response.getJSONObject("owner");
                     globalCacheMap.get(code).rating = response.getString("rating");
                     globalCacheMap.get(code).size = response.getString("size2");
                     globalCacheMap.get(code).recommendations = response.getString("recommendations");
                     globalCacheMap.get(code).owner = ownerObj.getString("username");
 
-                    Bundle bundle = new Bundle();
-                    bundle.putString("waypoint", code);
-                    bundle.putString("name", globalCacheMap.get(code).name);
-                    bundle.putString("type", globalCacheMap.get(code).type);
-                    bundle.putString("size", globalCacheMap.get(code).size);
-                    bundle.putString("rating", globalCacheMap.get(code).rating);
-                    bundle.putString("owner", globalCacheMap.get(code).owner);
-                    bundle.putString("recommendations", globalCacheMap.get(code).recommendations);
-                    bundle.putString("location", globalCacheMap.get(code).location);
 
-                    globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
-                    android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
-                    android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
-
-                    setMarkerSelected(marker, globalCacheMap.get(code).type);
-
-                    if (lastSelectedMarker != null) setPreviousMarkerDisable();
-                    lastSelectedMarker = marker;
-                    lastSelectedMarkerType = globalCacheMap.get(code).type;
-
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                } catch (UnknownHostException uhe){
+                    runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            Toast.makeText(MapsActivity.this, "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
                 }
+                return null;
             }
-        }, new Response.ErrorListener() {
+
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-                Toast.makeText(MapsActivity.this,
-                        "Błąd połączenia z serwerem", Toast.LENGTH_LONG).show();
+            protected void onPostExecute(Void result) {
+
+                Bundle bundle = new Bundle();
+                bundle.putString("waypoint", code);
+                bundle.putString("name", globalCacheMap.get(code).name);
+                bundle.putString("type", globalCacheMap.get(code).type);
+                bundle.putString("size", globalCacheMap.get(code).size);
+                bundle.putString("rating", globalCacheMap.get(code).rating);
+                bundle.putString("owner", globalCacheMap.get(code).owner);
+                bundle.putString("recommendations", globalCacheMap.get(code).recommendations);
+                bundle.putString("location", globalCacheMap.get(code).location);
+
+                globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
+                android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
+                android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
+
+                setMarkerSelected(marker, globalCacheMap.get(code).type);
+
+                if (lastSelectedMarker != null) setPreviousMarkerDisable();
+                lastSelectedMarker = marker;
+                lastSelectedMarkerType = globalCacheMap.get(code).type;
+
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
             }
-        });
-        AppController.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
+        }.execute();
     }
 
     public void setMarkerSelected(Marker marker, String type){
@@ -416,6 +434,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 lastSelectedMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_webcam));
                 break;
         }
+    }
+
+    private JSONObject jsonObjectRequest(URL url) throws JSONException, IOException {
+        BufferedReader reader;
+        reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuffer buffer = new StringBuffer();
+        int read;
+        char[] chars = new char[1024];
+        while ((read = reader.read(chars)) != -1) {
+            buffer.append(chars, 0, read);
+        }
+        JSONObject jsonObj = new JSONObject(String.valueOf(buffer));
+        return jsonObj;
     }
 }
 

@@ -1,6 +1,7 @@
 package com.kopec.wojciech.occlient;
 
 import android.annotation.TargetApi;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -9,14 +10,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonObjectRequest;
+import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.UnknownHostException;
 
 public class FragmentCacheLogs extends android.support.v4.app.Fragment {
 
@@ -36,7 +38,6 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
         return fragment;
     }
 
-    //OnCreate
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -45,18 +46,17 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
 
         //Request
         final int numberOfLogs = 100;
-        final String tag_json_obj = "json_obj_req";
-        String url = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs ;
-        final String TAG = MapsActivity.class.getSimpleName();
 
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.POST, url, null, new Response.Listener<JSONObject>() {
+        final CacheLog.List logList = new CacheLog.List();
+        new AsyncTask<Void, Void, Void>() {
             @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
-            public void onResponse(JSONObject response) {
-                Log.d(TAG, response.toString());
-
+            protected Void doInBackground(Void... params) {
                 try {
-                    CacheLog.List logList = new CacheLog.List();
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
+                    JSONObject response = jsonObjectRequest(new URL(urlString));
+
+
                     JSONArray list = response.getJSONArray("latest_logs");
 
                     for(int i=0; i<list.length(); i++){
@@ -69,30 +69,50 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                         //String time = parts[1];
 
                         logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
+
                     }
-
-                    RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
-                    RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-                    mLayoutManager.setAutoMeasureEnabled(false);
-                    mRecyclerView.setLayoutManager(mLayoutManager);
-                    LogAdapter mAdapter = new LogAdapter();
-                    mAdapter.addLogs(logList);
-                    mRecyclerView.setAdapter(mAdapter);
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                } catch (UnknownHostException uhe){
+                    getActivity().runOnUiThread(new Runnable(){
+                        @Override
+                        public void run(){
+                            Toast.makeText(getActivity(), "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
                 }
+                return null;
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-            }
-        });
 
-        AppController.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
+            @Override
+            protected void onPostExecute(Void result) {
+
+                RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+                RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+                mLayoutManager.setAutoMeasureEnabled(false);
+                mRecyclerView.setLayoutManager(mLayoutManager);
+                LogAdapter mAdapter = new LogAdapter();
+                mAdapter.addLogs(logList);
+                mRecyclerView.setAdapter(mAdapter);
+
+            }
+        }.execute();
 
         return rootView;
     }
+
+    private JSONObject jsonObjectRequest(URL url) throws JSONException, IOException {
+        BufferedReader reader;
+        reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuffer buffer = new StringBuffer();
+        int read;
+        char[] chars = new char[1024];
+        while ((read = reader.read(chars)) != -1) {
+            buffer.append(chars, 0, read);
+        }
+        JSONObject jsonObj = new JSONObject(String.valueOf(buffer));
+        return jsonObj;
+    }
+
 }
 
