@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include
+        layout="@layout/fragment_maps"
+        android:id="@+id/set_map_center"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:visibility="gone"/>
+
+    <Button
+        android:text="@string/set_map_center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/show_map_button"
+        android:onClick="onShowMapClick"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:text="@string/set_map_cancel"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/cancel_map_button"
+            android:visibility="gone"
+            android:onClick="onCancelMapClick"/>
+
+        <Button
+            android:text="@string/set_map_ok"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/ok_map_button"
+            android:visibility="gone"
+            android:onClick="onOKMapClick"/>
+
+    </LinearLayout>
+
+
+    <Button
+        android:text="@string/download_caches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/download_caches_button"
+        android:onClick="onDownloadCachesClick"
+        android:gravity="center"/>
+
+
+</LinearLayout>

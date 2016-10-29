@@ -2,16 +2,29 @@ package com.kopec.wojciech.occlient;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ListView;
 import android.widget.Toast;
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -29,27 +42,37 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
-
+import java.util.Iterator;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static GoogleMap mMap;
     private ArrayList<String> globalWaypointList = new ArrayList<>();
-    private HashMap<String, CacheInfo> globalCacheMap = new HashMap<>();
     private FragmentMapCacheInfo globalFragmentMapCacheInfo = new FragmentMapCacheInfo();
+    private JSONObject globalJsonObject = new JSONObject();
     private Marker lastSelectedMarker;
     private String lastSelectedMarkerType;
+
+    SharedPreferences sharedPreferences;
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+
+    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-
+        sharedPreferences = getSharedPreferences("searchFilters", Context.MODE_PRIVATE);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     @Override
@@ -60,6 +83,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(faisUJ, 14));
         //mMap.getUiSettings().setZoomControlsEnabled(true);
         //mMap.setMapType(googleMap.MAP_TYPE_SATELLITE);
+
+        JSONObject loadedJson = null;
+        try {
+            loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", ""));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        if(loadedJson != null){
+            Iterator<String> iter = loadedJson.keys();
+            while (iter.hasNext()) {
+                String key = iter.next();
+                if(!globalWaypointList.contains(key)){
+                    globalWaypointList.add(key);
+                    try {
+                        globalJsonObject.put(key, loadedJson.get(key));
+                    } catch (JSONException e) {
+                        // Something went wrong!
+                    }
+                }
+            }
+        }
+        showWaypoints(globalWaypointList);
+
+        Log.d("JSON GLOBAL", globalJsonObject.toString());
+
 
         if (Build.VERSION.SDK_INT >= 23) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -76,8 +125,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     setPreviousMarkerDisable();
                     lastSelectedMarker = null;
                 }
-                android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
-                android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
             }
         });
@@ -85,6 +134,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMarkerClickListener(
                 new GoogleMap.OnMarkerClickListener() {
                     boolean doNotMoveCameraToCenterMarker = true;
+
                     public boolean onMarkerClick(Marker marker) {
                         cacheRequest(marker.getSnippet(), marker);
                         return doNotMoveCameraToCenterMarker;
@@ -99,31 +149,170 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
+    boolean[] selectedFilters;
     private MenuItem menuItem;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        menuItem = item;
         switch (item.getItemId()) {
             case R.id.action_download_caches:
-                menuItem = item;
-
                 LatLng mapCenterLatLng = mMap.getCameraPosition().target;
                 String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
-                String user_uuid = "";
-                String limit = "100";
-                waypointsRequest(mapCenterString, limit, user_uuid);
+                String limit = "&limit=100";
+                waypointsRequest(mapCenterString, limit);
+                return true;
+
+            case R.id.action_filter_caches:
+                selectedFilters = new boolean[6];
+                selectedFilters[0] = sharedPreferences.getBoolean("notFound", true);
+                selectedFilters[1] = sharedPreferences.getBoolean("found", false);
+                selectedFilters[2] = sharedPreferences.getBoolean("ignored", true);
+                selectedFilters[3] = sharedPreferences.getBoolean("own", true);
+                selectedFilters[4] = sharedPreferences.getBoolean("temporarilyUnavailable", true);
+                selectedFilters[5] = sharedPreferences.getBoolean("archived", true);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                builder.setTitle("Ukryj skrzynki")
+                        .setMultiChoiceItems(R.array.filters, null,
+                                new DialogInterface.OnMultiChoiceClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                                        if (isChecked) {
+                                            // If the user checked the item, add it to the selected items
+                                            selectedFilters[which] = true;
+                                        } else if (selectedFilters[which]) {
+                                            // Else, if the item is already in the array, remove it
+                                            selectedFilters[which] = false;
+                                        }
+                                        Log.d("Tablica", String.valueOf(selectedFilters[which]));
+                                    }
+                                })
+
+                        // Set the action buttons
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+
+                                mMap.clear();
+                                globalWaypointList.clear();
+                                lastSelectedMarker = null;
+                                lastSelectedMarkerType = null;
+                                FragmentManager fragmentManager = getSupportFragmentManager();
+                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                                fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
+
+                                LatLng mapCenterLatLng = mMap.getCameraPosition().target;
+                                String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
+                                String limit = "&limit=100";
+
+                                for (int i = 0; i < selectedFilters.length; i++) {
+                                    SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                                    switch (i) {
+                                        case 0:
+                                            if (selectedFilters[i])
+                                                mEditor.putBoolean("notFound", true).apply();
+                                            else mEditor.putBoolean("notFound", false).apply();
+                                            break;
+
+                                        case 1:
+                                            if (selectedFilters[i])
+                                                mEditor.putBoolean("found", true).apply();
+                                            else mEditor.putBoolean("found", false).apply();
+                                            break;
+
+                                        case 2:
+                                            if (selectedFilters[i])
+                                                mEditor.putBoolean("ignored", true).apply();
+                                            else mEditor.putBoolean("ignored", false).apply();
+                                            break;
+
+                                        case 3:
+                                            if (selectedFilters[i])
+                                                mEditor.putBoolean("own", true).apply();
+                                            else mEditor.putBoolean("own", false).apply();
+                                            break;
+
+                                        case 4:
+                                            if (selectedFilters[i])
+                                                mEditor.putBoolean("temporarilyUnavailable", true).apply();
+                                            else
+                                                mEditor.putBoolean("temporarilyUnavailable", false).apply();
+                                            break;
+
+                                        case 5:
+                                            if (selectedFilters[i])
+                                                mEditor.putBoolean("archived", true).apply();
+                                            else mEditor.putBoolean("archived", false).apply();
+                                            break;
+                                    }
+                                }
+                                waypointsRequest(mapCenterString, limit);
+                            }
+                        })
+                        .setNegativeButton("Anuluj", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                //...
+                            }
+                        });
+
+                AlertDialog multichoiceDialog = builder.create();
+                multichoiceDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+
+                    @Override
+                    public void onShow(DialogInterface dialog) {
+                        ListView list = ((AlertDialog) dialog).getListView();
+                        list.setItemChecked(0, sharedPreferences.getBoolean("notFound", true));
+                        list.setItemChecked(1, sharedPreferences.getBoolean("found", false));
+                        list.setItemChecked(2, sharedPreferences.getBoolean("ignored", true));
+                        list.setItemChecked(3, sharedPreferences.getBoolean("own", true));
+                        list.setItemChecked(4, sharedPreferences.getBoolean("temporarilyUnavailable", true));
+                        list.setItemChecked(5, sharedPreferences.getBoolean("archived", true));
+                    }
+                });
+                multichoiceDialog.show();
+                return true;
+
+            case R.id.action_save_caches:
+
+                Intent intent = new Intent(this, SaveCacheActivity.class);
+                startActivity(intent);
+
+
+//                String jsonObj = globalJsonObject.toString();
+//                SharedPreferences.Editor mEditor = sharedPreferences.edit();
+//                mEditor.putString("jsonCaches", jsonObj);
+//                mEditor.apply();
 
                 return true;
-//            case R.id.action_location_found:
-//                // location found
-//                LocationFound();
-//                return true;
-//            case R.id.action_refresh:
-//                // refresh
-//                return true;
-//            case R.id.action_help:
-//                // help action
-//                return true;
+
+            case R.id.action_load_caches:
+
+                JSONObject loadedJson = null;
+                try {
+                    loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", null));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                if(loadedJson != null){
+                    Iterator<String> iter = loadedJson.keys();
+                    while (iter.hasNext()) {
+                        String key = iter.next();
+                        if(!globalWaypointList.contains(key)){
+                               globalWaypointList.add(key);
+                            try {
+                                globalJsonObject.put(key, loadedJson.get(key));
+                            } catch (JSONException e) {
+                                // Something went wrong!
+                            }
+                        }
+                    }
+                }
+                showWaypoints(globalWaypointList);
+
+                return true;
 //            case R.id.action_check_updates:
 //                // check for updates action
 //                return true;
@@ -133,8 +322,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     //Requests
-
-    public void waypointsRequest(final String center, final String limit, final String notFoundBy){
+    public void waypointsRequest(final String center, final String limit) {
 
         final ArrayList<String> newWaypoints = new ArrayList<>();
         new AsyncTask<Void, Void, Void>() {
@@ -144,12 +332,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 super.onPreExecute();
                 menuItem.setActionView(R.layout.progressbar);
                 menuItem.expandActionView();
+
             }
+
             @Override
             protected Void doInBackground(Void... params) {
                 ArrayList<String> waypointList = new ArrayList<>();
                 try {
-                    String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + "&limit=" + limit + "&not_found_by=" + notFoundBy;
+                    String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + limit;
+
+                    if (sharedPreferences.getBoolean("notFound", true))
+                        urlString += "&not_found_by=03767B69-4960-065E-0A2A-984EDE6BBC83";
+                    if (sharedPreferences.getBoolean("found", false))
+                        urlString += "&found_by=03767B69-4960-065E-0A2A-984EDE6BBC83";
+
                     JSONObject jsonObj = jsonObjectRequest(new URL(urlString));
 
                     JSONArray list = jsonObj.getJSONArray("results");
@@ -169,10 +365,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         globalWaypointList.addAll(newWaypoints);
                     }
 
-                } catch (UnknownHostException uhe){
-                    runOnUiThread(new Runnable(){
+                } catch (UnknownHostException uhe) {
+                    runOnUiThread(new Runnable() {
                         @Override
-                        public void run(){
+                        public void run() {
                             Toast.makeText(MapsActivity.this, "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
                         }
                     });
@@ -181,6 +377,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 return null;
             }
+
             @Override
             protected void onPostExecute(Void result) {
                 if (!newWaypoints.isEmpty()) {
@@ -195,7 +392,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void cachesRequest(final ArrayList<String> waypointList) {
 
-        final HashMap<String, CacheInfo> cacheMap = new HashMap<>();
         new AsyncTask<Void, Void, Void>() {
             @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
@@ -207,19 +403,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             codes += "|" + waypointList.get(i);
                         }
                     }
-                    String urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_codes=" + codes + "";
+
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations|location|status|code&cache_codes=" + codes + "";
                     JSONObject response = jsonObjectRequest(new URL(urlString));
 
                     for (int i = 0; i < waypointList.size(); i++) {
-                        JSONObject obj = response.getJSONObject(waypointList.get(i));
-                        cacheMap.put(waypointList.get(i), new CacheInfo(obj.getString("code"), obj.getString("name"), obj.getString("location"), obj.getString("type"), obj.getString("status")));
+                        globalJsonObject.put(waypointList.get(i), response.getJSONObject(waypointList.get(i)));
                     }
-                    globalCacheMap.putAll(cacheMap);
 
-                } catch (UnknownHostException uhe){
-                    runOnUiThread(new Runnable(){
+                } catch (UnknownHostException uhe) {
+                    runOnUiThread(new Runnable() {
                         @Override
-                        public void run(){
+                        public void run() {
                             Toast.makeText(MapsActivity.this, "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
                         }
                     });
@@ -231,148 +426,130 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             protected void onPostExecute(Void result) {
-                showWaypoints(cacheMap, waypointList);
+                showWaypoints(waypointList);
             }
         }.execute();
     }
 
-    public void showWaypoints(HashMap<String, CacheInfo> cacheMap, ArrayList<String> waypointList) {
+    public void showWaypoints(ArrayList<String> waypointList) {
 
         for (int i = 0; i < waypointList.size(); i++) {
-            String[] parts = cacheMap.get(waypointList.get(i)).location.split("\\|");
-            Double latitude = Double.parseDouble(parts[0]);
-            Double longitude = Double.parseDouble(parts[1]);
+            try {
+                JSONObject tempjson = globalJsonObject.getJSONObject(waypointList.get(i));
+                String[] parts;
+                parts = tempjson.getString("location").split("\\|");
+                Double latitude = Double.parseDouble(parts[0]);
+                Double longitude = Double.parseDouble(parts[1]);
 
-            switch (cacheMap.get(waypointList.get(i)).type) {
-                case "Traditional":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Other":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_unknown))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Quiz":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_quiz))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Multi":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_multi))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Virtual":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_virtual))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Own":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_own))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Moving":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_moving))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Event":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_event))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
-                case "Webcam":
-                    mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(latitude, longitude))
-                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_webcam))
-                            .snippet(cacheMap.get(waypointList.get(i)).code)
-                    );
-                    break;
+                switch (tempjson.getString("type")) {
+                    case "Traditional":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Other":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_unknown))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Quiz":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_quiz))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Multi":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_multi))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Virtual":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_virtual))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Own":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_own))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Moving":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_moving))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Event":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_event))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                    case "Webcam":
+                        mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(latitude, longitude))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.cache_webcam))
+                                .snippet(tempjson.getString("code"))
+                        );
+                        break;
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
         }
-        menuItem.collapseActionView();
-        menuItem.setActionView(null);
+        if(menuItem != null){
+            menuItem.collapseActionView();
+            menuItem.setActionView(null);
+        }
     }
 
     public void cacheRequest(final String code, final Marker marker) {
 
-        new AsyncTask<Void, Void, Void>() {
-            @TargetApi(Build.VERSION_CODES.KITKAT)
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations&cache_code=" + code;
-                    JSONObject response = jsonObjectRequest(new URL(urlString));
 
-                    JSONObject ownerObj = response.getJSONObject("owner");
-                    globalCacheMap.get(code).rating = response.getString("rating");
-                    globalCacheMap.get(code).size = response.getString("size2");
-                    globalCacheMap.get(code).recommendations = response.getString("recommendations");
-                    globalCacheMap.get(code).owner = ownerObj.getString("username");
+        Bundle bundle = new Bundle();
+        try {
+            bundle.putString("waypoint", code);
+            bundle.putString("name", globalJsonObject.getJSONObject(code).getString("name"));
+            bundle.putString("type", globalJsonObject.getJSONObject(code).getString("type"));
+            bundle.putString("size", globalJsonObject.getJSONObject(code).getString("size2"));
+            bundle.putString("rating", globalJsonObject.getJSONObject(code).getString("rating"));
+            bundle.putString("owner", globalJsonObject.getJSONObject(code).getJSONObject("owner").getString("username"));
+            bundle.putString("recommendations", globalJsonObject.getJSONObject(code).getString("recommendations"));
+            bundle.putString("location", globalJsonObject.getJSONObject(code).getString("location"));
 
+            setMarkerSelected(marker, globalJsonObject.getJSONObject(code).getString("type"));
+            if (lastSelectedMarker != null) setPreviousMarkerDisable();
+            lastSelectedMarker = marker;
+            lastSelectedMarkerType = globalJsonObject.getJSONObject(code).getString("type");
 
-                } catch (UnknownHostException uhe){
-                    runOnUiThread(new Runnable(){
-                        @Override
-                        public void run(){
-                            Toast.makeText(MapsActivity.this, "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
-                        }
-                    });
-                } catch (Exception e) {
-                    Log.d("ERROR", e.toString());
-                }
-                return null;
-            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-            @Override
-            protected void onPostExecute(Void result) {
+        globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
 
-                Bundle bundle = new Bundle();
-                bundle.putString("waypoint", code);
-                bundle.putString("name", globalCacheMap.get(code).name);
-                bundle.putString("type", globalCacheMap.get(code).type);
-                bundle.putString("size", globalCacheMap.get(code).size);
-                bundle.putString("rating", globalCacheMap.get(code).rating);
-                bundle.putString("owner", globalCacheMap.get(code).owner);
-                bundle.putString("recommendations", globalCacheMap.get(code).recommendations);
-                bundle.putString("location", globalCacheMap.get(code).location);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
 
-                globalFragmentMapCacheInfo = FragmentMapCacheInfo.newInstance(bundle);
-                android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
-                android.support.v4.app.FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
-
-                setMarkerSelected(marker, globalCacheMap.get(code).type);
-
-                if (lastSelectedMarker != null) setPreviousMarkerDisable();
-                lastSelectedMarker = marker;
-                lastSelectedMarkerType = globalCacheMap.get(code).type;
-
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
-            }
-        }.execute();
     }
 
-    public void setMarkerSelected(Marker marker, String type){
+    public void setMarkerSelected(Marker marker, String type) {
         switch (type) {
             case "Traditional":
                 marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.cache_traditional_selected));
@@ -445,11 +622,44 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         while ((read = reader.read(chars)) != -1) {
             buffer.append(chars, 0, read);
         }
-        JSONObject jsonObj = new JSONObject(String.valueOf(buffer));
-        return jsonObj;
+        return new JSONObject(String.valueOf(buffer));
+    }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Maps Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
     }
 }
-
-
 
 

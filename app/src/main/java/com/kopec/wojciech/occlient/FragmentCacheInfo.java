@@ -136,7 +136,7 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
             @Override
             protected void onPostExecute(Void result) {
 
-                if(!imgDraws.isEmpty()){
+                if(!imgDraws.isEmpty() && getActivity().getSupportFragmentManager() != null){
                     mAdapter = new PlaceSlidesFragmentAdapter(getActivity()
                             .getSupportFragmentManager(), imgDraws);
                     mPager = (ViewPager) rootView.findViewById(R.id.pager);

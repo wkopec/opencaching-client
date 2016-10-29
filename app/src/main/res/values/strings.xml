@@ -9,4 +9,27 @@
     <string name="title_section2">Logi</string>
     <string name="title_section3">Zdjęcia</string>
     <string name="cache_descripion">OPIS SKRZYNKI</string>
+    <string name="action_filter_caches">Filtruj_skrzynki</string>
+    <string name="found">Znalezione</string>
+    <string name="own">Własne</string>
+    <string name="ignored">Ignorowane</string>
+    <string name="not_fount">Jeszcze nieznalezione</string>
+    <string name="temporarily_unavailable">Tymczasowo niedostępne</string>
+    <string name="archived">Zarchiwizowane</string>
+    <string name="action_save_caches">Pobierz skrzynki</string>
+    <string name="action_load_caches">Wczytaj skrzynki</string>
+    <string name="set_map_center">Wybierz punkt na mapie</string>
+    <string name="set_map_ok">OK</string>
+    <string name="set_map_cancel">Anuluj</string>
+    <string name="download_caches">Pobierz</string>
+
+    <string-array name="filters">
+        <item>@string/found</item>
+        <item>@string/not_fount</item>
+        <item>@string/ignored</item>
+        <item>@string/own</item>
+        <item>@string/temporarily_unavailable</item>
+        <item>@string/archived</item>
+    </string-array>
+
 </resources>

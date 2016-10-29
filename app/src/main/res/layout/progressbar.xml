@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ProgressBar xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/progressBar"
-    android:layout_width="38dp"
-    android:layout_height="38dp"
-    android:paddingRight="10dp">
+    android:layout_width="match_parent"
+    android:layout_height="28dp">
 
 </ProgressBar>

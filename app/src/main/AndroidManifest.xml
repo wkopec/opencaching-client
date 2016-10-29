@@ -10,7 +10,6 @@
 
     <application
         android:hardwareAccelerated="true"
-        android:name=".AppController"
         android:allowBackup="true"
         android:icon="@drawable/app_icon"
         android:label="@string/title_activity_maps"
@@ -32,9 +31,11 @@
 
         <activity
             android:name=".CacheActivity"
-            android:launchMode = "singleTask"
-            android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+            android:parentActivityName=".MapsActivity"/>
+
+        <activity
+            android:name=".SaveCacheActivity"
+            android:parentActivityName=".MapsActivity"/>
 
         <meta-data
             android:name="com.google.android.gms.version"
