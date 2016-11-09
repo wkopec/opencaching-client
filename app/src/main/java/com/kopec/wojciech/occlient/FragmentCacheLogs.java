@@ -1,6 +1,8 @@
 package com.kopec.wojciech.occlient;
 
 import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,13 +26,13 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
 
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static String waypoint;
+    SharedPreferences sharedPreferences;
 
     public FragmentCacheLogs() {
     }
 
     public static FragmentCacheLogs newInstance(int sectionNumber, Bundle bundle) {
         waypoint = bundle.getString("waypoint");
-        Log.d("Waypoint from LOGS", waypoint);
         FragmentCacheLogs fragment = new FragmentCacheLogs();
         Bundle args = new Bundle();
         args.putInt(ARG_SECTION_NUMBER, sectionNumber);
@@ -42,61 +44,104 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        sharedPreferences = this.getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
         final View rootView = inflater.inflate(R.layout.fragment_cache_logs, container, false);
 
-        //Request
-        final int numberOfLogs = 100;
-
+        JSONObject jsonLoadedObject = new JSONObject();
         final CacheLog.List logList = new CacheLog.List();
-        new AsyncTask<Void, Void, Void>() {
-            @TargetApi(Build.VERSION_CODES.KITKAT)
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
-                    JSONObject response = jsonObjectRequest(new URL(urlString));
+
+        try {
+            if(sharedPreferences.getString("jsonCaches", null) != null){
+                    jsonLoadedObject= new JSONObject(sharedPreferences.getString("jsonCaches", null));
+            }
+            if(jsonLoadedObject.has(waypoint)) {
+                JSONObject jsonObject = jsonLoadedObject.getJSONObject(waypoint);
+                JSONArray list = jsonObject.getJSONArray("latest_logs");
+
+                for(int i=0; i<list.length(); i++){
+                    JSONObject obj = list.getJSONObject(i);
+                    JSONObject loginObj = obj.getJSONObject("user");
+
+                    String date = obj.getString("date");
+                    String[] parts = date.split("T");
+                    String day = parts[0];
+                    //String time = parts[1];
+
+                    logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
 
 
-                    JSONArray list = response.getJSONArray("latest_logs");
+                    RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+                    RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+                    mLayoutManager.setAutoMeasureEnabled(false);
+                    mRecyclerView.setLayoutManager(mLayoutManager);
+                    LogAdapter mAdapter = new LogAdapter();
+                    mAdapter.addLogs(logList);
+                    mRecyclerView.setAdapter(mAdapter);
 
-                    for(int i=0; i<list.length(); i++){
-                        JSONObject obj = list.getJSONObject(i);
-                        JSONObject loginObj = obj.getJSONObject("user");
 
-                        String date = obj.getString("date");
-                        String[] parts = date.split("T");
-                        String day = parts[0];
-                        //String time = parts[1];
+                }
 
-                        logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
+
+
+
+            }else{
+                //Request
+                final int numberOfLogs = 100;
+
+                new AsyncTask<Void, Void, Void>() {
+                    @TargetApi(Build.VERSION_CODES.KITKAT)
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        try {
+                            String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
+                            JSONObject response = jsonObjectRequest(new URL(urlString));
+
+
+                            JSONArray list = response.getJSONArray("latest_logs");
+
+                            for(int i=0; i<list.length(); i++){
+                                JSONObject obj = list.getJSONObject(i);
+                                JSONObject loginObj = obj.getJSONObject("user");
+
+                                String date = obj.getString("date");
+                                String[] parts = date.split("T");
+                                String day = parts[0];
+                                //String time = parts[1];
+
+                                logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
+
+                            }
+                        } catch (UnknownHostException uhe){
+                            getActivity().runOnUiThread(new Runnable(){
+                                @Override
+                                public void run(){
+                                    Toast.makeText(getActivity(), "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        } catch (Exception e) {
+                            Log.d("ERROR", e.toString());
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void result) {
+
+                        RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+                        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+                        mLayoutManager.setAutoMeasureEnabled(false);
+                        mRecyclerView.setLayoutManager(mLayoutManager);
+                        LogAdapter mAdapter = new LogAdapter();
+                        mAdapter.addLogs(logList);
+                        mRecyclerView.setAdapter(mAdapter);
 
                     }
-                } catch (UnknownHostException uhe){
-                    getActivity().runOnUiThread(new Runnable(){
-                        @Override
-                        public void run(){
-                            Toast.makeText(getActivity(), "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
-                        }
-                    });
-                } catch (Exception e) {
-                    Log.d("ERROR", e.toString());
-                }
-                return null;
+                }.execute();
             }
 
-            @Override
-            protected void onPostExecute(Void result) {
-
-                RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
-                RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-                mLayoutManager.setAutoMeasureEnabled(false);
-                mRecyclerView.setLayoutManager(mLayoutManager);
-                LogAdapter mAdapter = new LogAdapter();
-                mAdapter.addLogs(logList);
-                mRecyclerView.setAdapter(mAdapter);
-
-            }
-        }.execute();
+        }catch (JSONException e) {
+                e.printStackTrace();
+        }
 
         return rootView;
     }

@@ -24,7 +24,6 @@
             android:layout_height="wrap_content"
             android:maxWidth="220dp"
             android:maxLines="1"
-            android:singleLine="true"
             android:layout_marginLeft="3dp"
             autofit:minTextSize="5sp"
             android:textSize="18sp"

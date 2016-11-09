@@ -65,7 +65,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        sharedPreferences = getSharedPreferences("searchFilters", Context.MODE_PRIVATE);
+        sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -84,26 +84,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         //mMap.getUiSettings().setZoomControlsEnabled(true);
         //mMap.setMapType(googleMap.MAP_TYPE_SATELLITE);
 
-        JSONObject loadedJson = null;
+        JSONObject loadedJson;
         try {
-            loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", ""));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        if(loadedJson != null){
-            Iterator<String> iter = loadedJson.keys();
-            while (iter.hasNext()) {
-                String key = iter.next();
-                if(!globalWaypointList.contains(key)){
-                    globalWaypointList.add(key);
-                    try {
-                        globalJsonObject.put(key, loadedJson.get(key));
-                    } catch (JSONException e) {
-                        // Something went wrong!
-                    }
+            if(sharedPreferences.getString("jsonCaches", null) != null){
+                loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", null));
+                Iterator<String> iter = loadedJson.keys();
+                while (iter.hasNext()) {
+                    String key = iter.next();
+                    if(!globalWaypointList.contains(key)){
+                        globalWaypointList.add(key);
+                        globalJsonObject.put(key, loadedJson.get(key));}
                 }
             }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
         showWaypoints(globalWaypointList);
 
@@ -279,7 +273,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Intent intent = new Intent(this, SaveCacheActivity.class);
                 startActivity(intent);
 
-
 //                String jsonObj = globalJsonObject.toString();
 //                SharedPreferences.Editor mEditor = sharedPreferences.edit();
 //                mEditor.putString("jsonCaches", jsonObj);
@@ -291,25 +284,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 JSONObject loadedJson = null;
                 try {
-                    loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", null));
-                } catch (JSONException e) {
+                    if(sharedPreferences.getString("jsonCaches", null) != null){
+                        loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", null));
+                        Iterator<String> iter = loadedJson.keys();
+                        while (iter.hasNext()) {
+                            String key = iter.next();
+                            if(!globalWaypointList.contains(key)){
+                                globalWaypointList.add(key);
+                                    globalJsonObject.put(key, loadedJson.get(key));}
+                            }
+                        }
+                    } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
-                if(loadedJson != null){
-                    Iterator<String> iter = loadedJson.keys();
-                    while (iter.hasNext()) {
-                        String key = iter.next();
-                        if(!globalWaypointList.contains(key)){
-                               globalWaypointList.add(key);
-                            try {
-                                globalJsonObject.put(key, loadedJson.get(key));
-                            } catch (JSONException e) {
-                                // Something went wrong!
-                            }
-                        }
-                    }
-                }
+
+                Log.d("LOADED", globalWaypointList.toString());
                 showWaypoints(globalWaypointList);
 
                 return true;
@@ -337,7 +327,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             protected Void doInBackground(Void... params) {
-                ArrayList<String> waypointList = new ArrayList<>();
                 try {
                     String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + limit;
 
@@ -349,21 +338,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     JSONObject jsonObj = jsonObjectRequest(new URL(urlString));
 
                     JSONArray list = jsonObj.getJSONArray("results");
-                    for (int i = 0; i < list.length(); i++) {
-                        waypointList.add(list.getString(i));
-                    }
 
-                    if (!globalWaypointList.isEmpty()) {
-                        for (int i = 0; i < waypointList.size(); i++) {
-                            if (!globalWaypointList.contains(waypointList.get(i))) {
-                                newWaypoints.add(waypointList.get(i));
-                            }
+                    for (int i = 0; i < list.length(); i++) {
+                        if (!globalWaypointList.contains(list.getString(i))) {
+                            newWaypoints.add(list.getString(i));
                         }
-                        globalWaypointList.addAll(newWaypoints);
-                    } else {
-                        newWaypoints.addAll(waypointList);
-                        globalWaypointList.addAll(newWaypoints);
                     }
+                    globalWaypointList.addAll(newWaypoints);
 
                 } catch (UnknownHostException uhe) {
                     runOnUiThread(new Runnable() {
@@ -404,7 +385,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     }
 
-                    String urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations|location|status|code&cache_codes=" + codes + "";
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations|location|status|code&cache_codes=" + codes;
                     JSONObject response = jsonObjectRequest(new URL(urlString));
 
                     for (int i = 0; i < waypointList.size(); i++) {

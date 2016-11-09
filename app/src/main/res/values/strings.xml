@@ -22,6 +22,15 @@
     <string name="set_map_ok">OK</string>
     <string name="set_map_cancel">Anuluj</string>
     <string name="download_caches">Pobierz</string>
+    <string name="cancel">Anuluj</string>
+    <string name="ok">OK</string>
+    <string name="save_caches">Pobierz skrzynki</string>
+    <string name="all_grades">Dowolna ocena</string>
+    <string name="at_least_normal">Przynajkniej \"normalna\"</string>
+    <string name="at_least_good">Przynajmniej \"dobra\"</string>
+    <string name="only_very_good">Tylko \"znakomita\"</string>
+    <string name="minimum_grade">Minimalna ocena</string>
+
 
     <string-array name="filters">
         <item>@string/found</item>
@@ -30,6 +39,14 @@
         <item>@string/own</item>
         <item>@string/temporarily_unavailable</item>
         <item>@string/archived</item>
+    </string-array>
+
+    <string-array name="minimum_grade">
+        <item>@string/minimum_grade</item>
+        <item>@string/all_grades</item>
+        <item>@string/at_least_normal</item>
+        <item>@string/at_least_good</item>
+        <item>@string/only_very_good</item>
     </string-array>
 
 </resources>
