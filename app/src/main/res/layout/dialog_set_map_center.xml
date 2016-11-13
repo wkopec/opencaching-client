@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:paddingTop="20dp">
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/mapView"

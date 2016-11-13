@@ -7,7 +7,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         tools:context="com.kopec.wojciech.occlient.FragmentCacheInfo"
         android:id="@+id/container2"
         android:descendantFocusability="blocksDescendants">
@@ -30,7 +30,7 @@
                 android:gravity="center"
                 android:id="@+id/show_hint"
                 android:enabled="false"
-                android:text="Podpowiedź"
+                android:text="@string/hint"
                 android:onClick="showHint"/>
 
             <Button
@@ -40,7 +40,7 @@
                 android:gravity="center"
                 android:id="@+id/show_gallery"
                 android:enabled="false"
-                android:text="Galeria"
+                android:text="@string/gallery"
                 android:onClick="showGallery"/>
 
         </LinearLayout>

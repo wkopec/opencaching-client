@@ -30,6 +30,6 @@ dependencies {
     compile 'com.android.support:cardview-v7:23.2.0'
     compile 'fr.avianey.com.viewpagerindicator:library:2.4.1@aar'
     compile 'me.grantland:autofittextview:0.2.+'
-
     compile 'com.google.android.gms:play-services-appindexing:9.2.0'
+    compile 'com.github.chrisbanes.photoview:library:1.2.4'
 }

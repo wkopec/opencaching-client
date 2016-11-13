@@ -14,20 +14,22 @@
         android:icon="@drawable/app_icon"
         android:label="@string/title_activity_maps"
         android:supportsRtl="true"
+        android:largeHeap="true"
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".MapsActivity">
+            android:name=".SplashActivity"
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
 
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MapsActivity"
+            android:launchMode="singleTop" />
 
         <activity
             android:name=".CacheActivity"
@@ -37,6 +39,10 @@
         <activity
             android:name=".SaveCacheActivity"
             android:parentActivityName=".MapsActivity"/>
+
+        <activity
+            android:name=".PictureActivity"
+            android:parentActivityName=".CacheActivity" />
 
         <meta-data
             android:name="com.google.android.gms.version"

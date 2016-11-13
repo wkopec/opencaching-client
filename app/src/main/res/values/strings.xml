@@ -3,7 +3,6 @@
     <string name="title_activity_maps">Opencaching Map</string>
     <string name="action_settings">Ustawienia</string>
     <string name="action_download_caches">Pobierz_skrzynki</string>
-    <string name="action_exit">Wyjście</string>
     <string name="title_activity_cache">CacheActivity</string>
     <string name="title_section1">Opis</string>
     <string name="title_section2">Logi</string>
@@ -16,11 +15,9 @@
     <string name="not_fount">Jeszcze nieznalezione</string>
     <string name="temporarily_unavailable">Tymczasowo niedostępne</string>
     <string name="archived">Zarchiwizowane</string>
-    <string name="action_save_caches">Pobierz skrzynki</string>
+    <string name="action_save_caches">Zapisz skrzynki offline</string>
     <string name="action_load_caches">Wczytaj skrzynki</string>
     <string name="set_map_center">Wybierz punkt na mapie</string>
-    <string name="set_map_ok">OK</string>
-    <string name="set_map_cancel">Anuluj</string>
     <string name="download_caches">Pobierz</string>
     <string name="cancel">Anuluj</string>
     <string name="ok">OK</string>
@@ -30,6 +27,11 @@
     <string name="at_least_good">Przynajmniej \"dobra\"</string>
     <string name="only_very_good">Tylko \"znakomita\"</string>
     <string name="minimum_grade">Minimalna ocena</string>
+    <string name="set_localization">Wybierz lokalizację</string>
+    <string name="hint">Podpowiedź</string>
+    <string name="gallery">Galeria</string>
+    <string name="estimated">Szacowana wielkość:</string>
+    <string name="number_of_caches">Ilość skrzynek</string>
 
 
     <string-array name="filters">

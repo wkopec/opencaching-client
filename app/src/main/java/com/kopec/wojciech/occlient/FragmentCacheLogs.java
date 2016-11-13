@@ -26,7 +26,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
 
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static String waypoint;
-    SharedPreferences sharedPreferences;
+    SharedPreferences jsonPreferences;
 
     public FragmentCacheLogs() {
     }
@@ -44,105 +44,65 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        sharedPreferences = this.getActivity().getSharedPreferences("preferences", Context.MODE_PRIVATE);
         final View rootView = inflater.inflate(R.layout.fragment_cache_logs, container, false);
-
-        JSONObject jsonLoadedObject = new JSONObject();
         final CacheLog.List logList = new CacheLog.List();
 
-        try {
-            if(sharedPreferences.getString("jsonCaches", null) != null){
-                    jsonLoadedObject= new JSONObject(sharedPreferences.getString("jsonCaches", null));
-            }
-            if(jsonLoadedObject.has(waypoint)) {
-                JSONObject jsonObject = jsonLoadedObject.getJSONObject(waypoint);
-                JSONArray list = jsonObject.getJSONArray("latest_logs");
+        final int numberOfLogs = 100;
 
-                for(int i=0; i<list.length(); i++){
-                    JSONObject obj = list.getJSONObject(i);
-                    JSONObject loginObj = obj.getJSONObject("user");
+        new AsyncTask<Void, Void, Void>() {
+            @TargetApi(Build.VERSION_CODES.KITKAT)
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    JSONObject jsonObject;
+                    JSONArray list;
+                    jsonPreferences = getActivity().getSharedPreferences("jsonCacheObjects", Context.MODE_PRIVATE);
+                    if(jsonPreferences.getString(waypoint, null) != null){
+                        jsonObject = new JSONObject(jsonPreferences.getString(waypoint, null));
+                        list = jsonObject.getJSONArray("latest_logs");
+                    }
+                    else{
+                        String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
+                        JSONObject response = jsonObjectRequest(new URL(urlString));
+                        list = response.getJSONArray("latest_logs");
+                    }
+                    Log.d("LIST", list.toString());
+                    for(int i=0; i<list.length(); i++){
+                        JSONObject obj = list.getJSONObject(i);
+                        JSONObject loginObj = obj.getJSONObject("user");
+                        String date = obj.getString("date");
+                        String[] parts = date.split("T");
+                        String day = parts[0];
+                        //String time = parts[1];
 
-                    String date = obj.getString("date");
-                    String[] parts = date.split("T");
-                    String day = parts[0];
-                    //String time = parts[1];
+                        logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
 
-                    logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
-
-
-                    RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
-                    RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-                    mLayoutManager.setAutoMeasureEnabled(false);
-                    mRecyclerView.setLayoutManager(mLayoutManager);
-                    LogAdapter mAdapter = new LogAdapter();
-                    mAdapter.addLogs(logList);
-                    mRecyclerView.setAdapter(mAdapter);
-
-
+                    }
+                } catch (UnknownHostException uhe) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getActivity(), "Brak dostępu do Internetu", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.d("ERROR", e.toString());
                 }
 
-
-
-
-            }else{
-                //Request
-                final int numberOfLogs = 100;
-
-                new AsyncTask<Void, Void, Void>() {
-                    @TargetApi(Build.VERSION_CODES.KITKAT)
-                    @Override
-                    protected Void doInBackground(Void... params) {
-                        try {
-                            String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
-                            JSONObject response = jsonObjectRequest(new URL(urlString));
-
-
-                            JSONArray list = response.getJSONArray("latest_logs");
-
-                            for(int i=0; i<list.length(); i++){
-                                JSONObject obj = list.getJSONObject(i);
-                                JSONObject loginObj = obj.getJSONObject("user");
-
-                                String date = obj.getString("date");
-                                String[] parts = date.split("T");
-                                String day = parts[0];
-                                //String time = parts[1];
-
-                                logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
-
-                            }
-                        } catch (UnknownHostException uhe){
-                            getActivity().runOnUiThread(new Runnable(){
-                                @Override
-                                public void run(){
-                                    Toast.makeText(getActivity(), "Błąd połączenia z opencaching.pl", Toast.LENGTH_LONG).show();
-                                }
-                            });
-                        } catch (Exception e) {
-                            Log.d("ERROR", e.toString());
-                        }
-                        return null;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Void result) {
-
-                        RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
-                        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-                        mLayoutManager.setAutoMeasureEnabled(false);
-                        mRecyclerView.setLayoutManager(mLayoutManager);
-                        LogAdapter mAdapter = new LogAdapter();
-                        mAdapter.addLogs(logList);
-                        mRecyclerView.setAdapter(mAdapter);
-
-                    }
-                }.execute();
+                return null;
             }
+             @Override
+             protected void onPostExecute(Void result) {
 
-        }catch (JSONException e) {
-                e.printStackTrace();
-        }
-
+                 RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+                 RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+                 mLayoutManager.setAutoMeasureEnabled(false);
+                 mRecyclerView.setLayoutManager(mLayoutManager);
+                 LogAdapter mAdapter = new LogAdapter();
+                 mAdapter.addLogs(logList);
+                 mRecyclerView.setAdapter(mAdapter);
+              }
+        }.execute();
         return rootView;
     }
 
@@ -155,8 +115,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
         while ((read = reader.read(chars)) != -1) {
             buffer.append(chars, 0, read);
         }
-        JSONObject jsonObj = new JSONObject(String.valueOf(buffer));
-        return jsonObj;
+        return new JSONObject(String.valueOf(buffer));
     }
 
 }

@@ -14,7 +14,7 @@ import java.util.ArrayList;
 public class PlaceSlidesFragmentAdapter extends FragmentPagerAdapter implements
         IconPagerAdapter {
 
-    protected ArrayList<Bitmap> imgDraws;
+    private ArrayList<Bitmap> imgDraws;
     private int mCount;
 
     public PlaceSlidesFragmentAdapter(FragmentManager fm, ArrayList<Bitmap> bmp) {
@@ -23,7 +23,7 @@ public class PlaceSlidesFragmentAdapter extends FragmentPagerAdapter implements
         mCount = imgDraws.size();
     }
 
-    protected static final int[] ICONS = new int[] {};
+    private static final int[] ICONS = new int[] {};
 
     @Override
     public Fragment getItem(int position) {

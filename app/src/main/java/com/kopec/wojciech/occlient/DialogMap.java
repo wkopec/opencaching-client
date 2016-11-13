@@ -6,8 +6,7 @@ import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
-
+import android.view.ViewGroup;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -20,12 +19,13 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class DialogMap extends DialogFragment implements OnMapReadyCallback {
 
+    private static View view;
     GoogleMap mMap;
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
 
-
-        View view = getActivity().getLayoutInflater().inflate(R.layout.dialog_set_map_center, null);
+        if(view == null)
+        view = getActivity().getLayoutInflater().inflate(R.layout.dialog_set_map_center, null);
 
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.mapView);
         mapFragment.getMapAsync(this);
@@ -38,14 +38,14 @@ public class DialogMap extends DialogFragment implements OnMapReadyCallback {
                                 LatLng mapCenterLatLng = mMap.getCameraPosition().target;
                                 SaveCacheActivity activity = (SaveCacheActivity) getActivity();
                                 activity.onReturnMapCenter(mapCenterLatLng);
-                                //((ViewGroup)view.getParent()).removeView(view);
+                                ((ViewGroup)view.getParent()).removeView(view);
                                 dialog.dismiss();
                             }
                         }
                 )
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                //((ViewGroup)view.getParent()).removeView(view);
+                                ((ViewGroup)view.getParent()).removeView(view);
                                 dialog.dismiss();
                             }
                         }
@@ -57,7 +57,6 @@ public class DialogMap extends DialogFragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
-        LatLng faisUJ = new LatLng(50.029591, 19.905875);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(faisUJ, 14));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50.062271, 19.938301), 10));
     }
 }
