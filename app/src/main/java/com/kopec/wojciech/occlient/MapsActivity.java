@@ -163,6 +163,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 return true;
 
             case R.id.action_filter_caches:
+
                 selectedFilters = new boolean[6];
                 selectedFilters[0] = sharedPreferences.getBoolean("notFound", true);
                 selectedFilters[1] = sharedPreferences.getBoolean("found", false);
@@ -193,13 +194,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             @Override
                             public void onClick(DialogInterface dialog, int id) {
 
-                                mMap.clear();
-                                globalWaypointList.clear();
-                                lastSelectedMarker = null;
-                                lastSelectedMarkerType = null;
-                                FragmentManager fragmentManager = getSupportFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                                fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
+                                clearMap();
 
                                 LatLng mapCenterLatLng = mMap.getCameraPosition().target;
                                 String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
@@ -280,25 +275,35 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 return true;
 
-            case R.id.action_load_caches:
+            case R.id.action_delete_caches:
 
-//                try {
-//                    //if(sharedPreferences.getString("jsonCaches", null) != null){
-//                    if(jsonPreferences.getString("jsonCaches", null) != null){
-//                        //JSONObject loadedJson = new JSONObject(sharedPreferences.getString("jsonCaches", null));
-//                        JSONObject loadedJson = new JSONObject(jsonPreferences.getString("jsonCaches", null));
-//                        Iterator<String> iter = loadedJson.keys();
-//                        while (iter.hasNext()) {
-//                            String key = iter.next();
-//                            if(!globalWaypointList.contains(key)){
-//                                globalWaypointList.add(key);
-//                                    globalJsonObject.put(key, loadedJson.get(key));}
-//                            }
-//                        }
-//                    } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//                showWaypoints(globalWaypointList);
+                SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                mEditor.putStringSet("savedWaypoints", null);
+                mEditor.apply();
+
+                SharedPreferences.Editor jsonEditor = jsonPreferences.edit();
+                jsonEditor.clear().apply();
+
+                clearMap();
+
+                File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map");
+                if(delete(fotoDirectory)){
+                    Toast.makeText(MapsActivity.this, "Usunięto pomyślnie", Toast.LENGTH_LONG).show();
+                }
+                else{
+                    Toast.makeText(MapsActivity.this, "Brak skrzynek do usunięcia", Toast.LENGTH_LONG).show();
+                }
+                return true;
+
+            case R.id.action_settings:
+
+                Intent settingsIntent = new Intent(this, SettingsActivity.class);
+                startActivity(settingsIntent);
+
+                return true;
+
+            case R.id.action_clear_map:
+                clearMap();
 
                 return true;
 
@@ -325,10 +330,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             protected Void doInBackground(Void... params) {
                 try {
                     String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + limit;
-                    if (sharedPreferences.getBoolean("notFound", true))
-                        urlString += "&not_found_by=03767B69-4960-065E-0A2A-984EDE6BBC83";
-                    if (sharedPreferences.getBoolean("found", false))
-                        urlString += "&found_by=03767B69-4960-065E-0A2A-984EDE6BBC83";
+                    if(! sharedPreferences.getString("user_uuid", "").equals("")){
+                        if (sharedPreferences.getBoolean("notFound", true))
+                            urlString += "&not_found_by=" + sharedPreferences.getString("user_uuid", "");
+                        if (sharedPreferences.getBoolean("found", false))
+                            urlString += "&found_by=" + sharedPreferences.getString("user_uuid", "");
+                    }
 
                     JSONObject jsonObj = jsonObjectRequest(new URL(urlString));
 
@@ -426,6 +433,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 JSONObject img = images.getJSONObject(j);
                                 InputStream in = new URL(img.getString("url")).openStream();
                                 Bitmap bmp = BitmapFactory.decodeStream(in);
+                                Log.d("Test Zapisu", img.getString("unique_caption"));
                                 savebitmap(bmp, img.getString("unique_caption"), waypointList.get(i));
                             }
                             publishProgress(i);
@@ -686,19 +694,47 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         bmp.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
         File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + waypoint);
 
-        if(fotoDirectory.mkdirs()) {
-            try {
-                File f = new File(fotoDirectory, name + ".jpg");
-                if(f.createNewFile()){
-                    FileOutputStream fo = new FileOutputStream(f);
-                    fo.write(bytes.toByteArray());
-                    fo.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.d("Saving bitmap Error", e.toString());
-                savebitmap(bmp, name, waypoint);
+        fotoDirectory.mkdirs();
+
+        try {
+            File f = new File(fotoDirectory, name + ".jpg");
+            if(f.createNewFile()){
+                FileOutputStream fo = new FileOutputStream(f);
+                fo.write(bytes.toByteArray());
+                fo.close();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.d("Saving bitmap Error", e.toString());
+            savebitmap(bmp, name, waypoint);
+        }
+    }
+
+    public void clearMap(){
+        mMap.clear();
+        globalWaypointList.clear();
+        lastSelectedMarker = null;
+        lastSelectedMarkerType = null;
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
+    }
+
+    public static boolean delete(File path) {
+        boolean result = true;
+        if (path.exists()) {
+            if (path.isDirectory()) {
+                for (File child : path.listFiles()) {
+                    result &= delete(child);
+                }
+                result &= path.delete(); // Delete empty directory.
+            } else if (path.isFile()) {
+                result = path.delete();
+            }
+            return result;
+        } else {
+            return false;
         }
     }
 

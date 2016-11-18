@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -120,9 +122,29 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                 try {
                     if(cacheObject.bigImgList != null){
                         for(int i=0; i<cacheObject.bigImgList.size(); i++) {
-                            InputStream in = new URL(cacheObject.bigImgList.get(i)).openStream();
-                            Bitmap bmp = BitmapFactory.decodeStream(in);
-                            imgDraws.add(bmp);
+
+
+                            //File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + globalBundle.getString("waypoint") + File.separator + images.getJSONObject(i).getString("unique_caption") + ".jpg");
+                            File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + globalBundle.getString("waypoint") + File.separator + (i+1) + ".jpg");
+                            Log.d("Adres", fotoDirectory.toString());
+                            if(fotoDirectory.exists()){
+                                Log.d("TESTER", "OFFLINE");
+                                Bitmap myBitmap = BitmapFactory.decodeFile(fotoDirectory.getAbsolutePath());
+                                imgDraws.add(myBitmap);
+                            }
+                            else{
+                                Log.d("TESTER", "ONLINE");
+                                InputStream in = new URL(cacheObject.bigImgList.get(i)).openStream();
+                                Bitmap bmp = BitmapFactory.decodeStream(in);
+                                imgDraws.add(bmp);
+                            }
+
+
+
+
+//                            InputStream in = new URL(cacheObject.bigImgList.get(i)).openStream();
+//                            Bitmap bmp = BitmapFactory.decodeStream(in);
+//                            imgDraws.add(bmp);
                         }
                     }
 

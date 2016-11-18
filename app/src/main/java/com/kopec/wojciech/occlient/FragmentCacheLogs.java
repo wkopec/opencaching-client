@@ -103,6 +103,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                  mRecyclerView.setAdapter(mAdapter);
               }
         }.execute();
+
         return rootView;
     }
 
