@@ -18,7 +18,8 @@
             android:layout_height="wrap_content"
             android:id="@+id/map_center_edit"
             android:inputType="text"
-            android:textSize="14sp"/>
+            android:textSize="14sp"
+            android:cursorVisible="false"/>
 
 
         <LinearLayout
@@ -52,15 +53,21 @@
             android:layout_marginTop="10dp"
             android:max="500"/>
 
-        <Spinner
-            android:id="@+id/spinner_grade"
-            android:layout_width="match_parent"
+        <!--<Spinner-->
+            <!--android:id="@+id/spinner_grade"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:entries="@array/minimum_grade" />-->
+
+        <Button
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:entries="@array/minimum_grade" />
+            android:text="@string/change_filters"
+            android:onClick="onChangeFiltersClick"
+            android:layout_marginTop="10dp"/>
 
 
     </LinearLayout>
-
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -73,6 +80,7 @@
             android:id="@+id/save_caches_fragment"
             android:layout_alignParentBottom="true">
         </FrameLayout>
+
     </RelativeLayout>
 
 </LinearLayout>

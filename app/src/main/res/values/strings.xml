@@ -130,5 +130,6 @@
     <string name="username">Nazwa użytkownika</string>
     <string name="other">Inne</string>
     <string name="clear_map">Wyczyść mapę</string>
+    <string name="change_filters">Zmień filtry</string>
 
 </resources>

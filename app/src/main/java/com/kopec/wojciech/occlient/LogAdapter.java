@@ -31,9 +31,11 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         holder.dateTextView.setText(cacheLog.date);
         holder.usernameTextView.setText(cacheLog.username);
 
-        holder.CommentWebView.getSettings().setJavaScriptEnabled(true);
-        holder.CommentWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        holder.CommentWebView.loadDataWithBaseURL(null, cacheLog.comment, "text/html", "UTF-8", null);
+        //holder.commentTextView.setText(Html.fromHtml(cacheLog.comment));
+
+        holder.commentWebView.getSettings().setJavaScriptEnabled(true);
+        holder.commentWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        holder.commentWebView.loadDataWithBaseURL(null, cacheLog.comment, "text/html", "UTF-8", null);
 
         if(cacheLog.type.equals("Found it")){
             holder.foundImageView.setBackgroundResource(R.drawable.log_found);
@@ -68,7 +70,6 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         else if(cacheLog.type.equals("Will attend")){
             holder.foundImageView.setBackgroundResource(R.drawable.log_will_attend);
         }
-
     }
 
     @Override
@@ -81,7 +82,7 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         public TextView commentTextView;
         public TextView usernameTextView;
         public ImageView foundImageView;
-        public WebView CommentWebView;
+        public WebView commentWebView;
 
         public CacheLogViewHolder(View itemView) {
             super(itemView);
@@ -89,7 +90,7 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
             commentTextView = (TextView) itemView.findViewById(R.id.commentTextView);
             usernameTextView = (TextView) itemView.findViewById(R.id.usernameTextView);
             foundImageView = (ImageView) itemView.findViewById(R.id.found_type);
-            CommentWebView = (WebView) itemView.findViewById(R.id.webComment);
+            commentWebView = (WebView) itemView.findViewById(R.id.webComment);
         }
     }
 

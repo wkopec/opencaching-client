@@ -15,6 +15,11 @@ public class CacheLog {
         this.comment = comment;
     }
 
+    public String getDate() { return date; }
+    public String getType() {return type; }
+    public String getUsername() { return username; }
+    public String getComment() { return comment; }
+
     public static class List extends ArrayList<CacheLog> {
 
     }

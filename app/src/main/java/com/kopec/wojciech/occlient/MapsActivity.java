@@ -163,109 +163,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 return true;
 
             case R.id.action_filter_caches:
+                if(sharedPreferences.getString("user_uuid", "").equals("")){
+                    Toast.makeText(MapsActivity.this, "Wprowadź użytkownika w ustawieniach", Toast.LENGTH_LONG).show();
+                }
+                else{
+                    showFilterDialog();
+                }
 
-                selectedFilters = new boolean[6];
-                selectedFilters[0] = sharedPreferences.getBoolean("notFound", true);
-                selectedFilters[1] = sharedPreferences.getBoolean("found", false);
-                selectedFilters[2] = sharedPreferences.getBoolean("ignored", true);
-                selectedFilters[3] = sharedPreferences.getBoolean("own", true);
-                selectedFilters[4] = sharedPreferences.getBoolean("temporarilyUnavailable", true);
-                selectedFilters[5] = sharedPreferences.getBoolean("archived", true);
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
-                builder.setTitle("Ukryj skrzynki")
-                        .setMultiChoiceItems(R.array.filters, null,
-                                new DialogInterface.OnMultiChoiceClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                                        if (isChecked) {
-                                            // If the user checked the item, add it to the selected items
-                                            selectedFilters[which] = true;
-                                        } else if (selectedFilters[which]) {
-                                            // Else, if the item is already in the array, remove it
-                                            selectedFilters[which] = false;
-                                        }
-                                        Log.d("Tablica", String.valueOf(selectedFilters[which]));
-                                    }
-                                })
-
-                        // Set the action buttons
-                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int id) {
-
-                                clearMap();
-
-                                LatLng mapCenterLatLng = mMap.getCameraPosition().target;
-                                String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
-                                String limit = "&limit=200";
-
-                                for (int i = 0; i < selectedFilters.length; i++) {
-                                    SharedPreferences.Editor mEditor = sharedPreferences.edit();
-                                    switch (i) {
-                                        case 0:
-                                            if (selectedFilters[i])
-                                                mEditor.putBoolean("notFound", true).apply();
-                                            else mEditor.putBoolean("notFound", false).apply();
-                                            break;
-
-                                        case 1:
-                                            if (selectedFilters[i])
-                                                mEditor.putBoolean("found", true).apply();
-                                            else mEditor.putBoolean("found", false).apply();
-                                            break;
-
-                                        case 2:
-                                            if (selectedFilters[i])
-                                                mEditor.putBoolean("ignored", true).apply();
-                                            else mEditor.putBoolean("ignored", false).apply();
-                                            break;
-
-                                        case 3:
-                                            if (selectedFilters[i])
-                                                mEditor.putBoolean("own", true).apply();
-                                            else mEditor.putBoolean("own", false).apply();
-                                            break;
-
-                                        case 4:
-                                            if (selectedFilters[i])
-                                                mEditor.putBoolean("temporarilyUnavailable", true).apply();
-                                            else
-                                                mEditor.putBoolean("temporarilyUnavailable", false).apply();
-                                            break;
-
-                                        case 5:
-                                            if (selectedFilters[i])
-                                                mEditor.putBoolean("archived", true).apply();
-                                            else mEditor.putBoolean("archived", false).apply();
-                                            break;
-                                    }
-                                }
-                                waypointsRequest(mapCenterString, limit, false);
-                            }
-                        })
-                        .setNegativeButton("Anuluj", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int id) {
-                                //...
-                            }
-                        });
-
-                AlertDialog multichoiceDialog = builder.create();
-                multichoiceDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-
-                    @Override
-                    public void onShow(DialogInterface dialog) {
-                        ListView list = ((AlertDialog) dialog).getListView();
-                        list.setItemChecked(0, sharedPreferences.getBoolean("notFound", true));
-                        list.setItemChecked(1, sharedPreferences.getBoolean("found", false));
-                        list.setItemChecked(2, sharedPreferences.getBoolean("ignored", true));
-                        list.setItemChecked(3, sharedPreferences.getBoolean("own", true));
-                        list.setItemChecked(4, sharedPreferences.getBoolean("temporarilyUnavailable", true));
-                        list.setItemChecked(5, sharedPreferences.getBoolean("archived", true));
-                    }
-                });
-                multichoiceDialog.show();
                 return true;
 
             case R.id.action_save_caches:
@@ -433,7 +338,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 JSONObject img = images.getJSONObject(j);
                                 InputStream in = new URL(img.getString("url")).openStream();
                                 Bitmap bmp = BitmapFactory.decodeStream(in);
-                                Log.d("Test Zapisu", img.getString("unique_caption"));
                                 savebitmap(bmp, img.getString("unique_caption"), waypointList.get(i));
                             }
                             publishProgress(i);
@@ -719,6 +623,73 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
+    }
+
+    public void showFilterDialog(){
+        selectedFilters = new boolean[6];
+        selectedFilters[0] = sharedPreferences.getBoolean("notFound", true);
+        selectedFilters[1] = sharedPreferences.getBoolean("found", false);
+        selectedFilters[2] = sharedPreferences.getBoolean("ignored", true);
+        selectedFilters[3] = sharedPreferences.getBoolean("own", true);
+        selectedFilters[4] = sharedPreferences.getBoolean("temporarilyUnavailable", true);
+        selectedFilters[5] = sharedPreferences.getBoolean("archived", true);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        builder.setTitle("Ukryj skrzynki")
+                .setMultiChoiceItems(R.array.filters, null,
+                        new DialogInterface.OnMultiChoiceClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+                                if (isChecked) {
+                                    selectedFilters[which] = true;
+                                } else if (selectedFilters[which]) {
+                                    selectedFilters[which] = false;
+                                }
+                            }
+                        })
+
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+
+                        clearMap();
+
+                        LatLng mapCenterLatLng = mMap.getCameraPosition().target;
+                        String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
+                        String limit = "&limit=200";
+
+                        SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                        mEditor.putBoolean("notFound", selectedFilters[0]);
+                        mEditor.putBoolean("found", selectedFilters[1]);
+                        mEditor.putBoolean("ignored", selectedFilters[2]);
+                        mEditor.putBoolean("own", selectedFilters[3]);
+                        mEditor.putBoolean("temporarilyUnavailable", selectedFilters[4]);
+                        mEditor.putBoolean("archived", selectedFilters[5]);
+                        mEditor.apply();
+
+                        waypointsRequest(mapCenterString, limit, false);
+                    }
+                })
+                .setNegativeButton("Anuluj", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                        //...
+                    }
+                });
+
+        AlertDialog multichoiceDialog = builder.create();
+        multichoiceDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+
+            @Override
+            public void onShow(DialogInterface dialog) {
+                ListView list = ((AlertDialog) dialog).getListView();
+
+                for (int i = 0; i<selectedFilters.length; i++) {
+                    list.setItemChecked(i, selectedFilters[i]);
+                }
+            }
+        });
+        multichoiceDialog.show();
     }
 
     public static boolean delete(File path) {
