@@ -12,8 +12,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,12 +41,9 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_cache_logs, container, false);
         final CacheLog.List logList = new CacheLog.List();
-
         final int numberOfLogs = 100;
 
         new AsyncTask<Void, Void, Void>() {
@@ -64,7 +59,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                         list = jsonObject.getJSONArray("latest_logs");
                     }
                     else{
-                        String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
+                        String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
                         JSONObject response = jsonObjectRequest(new URL(urlString));
                         list = response.getJSONArray("latest_logs");
                     }
@@ -75,10 +70,8 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                         String date = obj.getString("date");
                         String[] parts = date.split("T");
                         String day = parts[0];
-                        //String time = parts[1];
 
                         logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
-
                     }
                 } catch (UnknownHostException uhe) {
                     getActivity().runOnUiThread(new Runnable() {
@@ -95,7 +88,6 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
             }
              @Override
              protected void onPostExecute(Void result) {
-
                  RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
                  RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
                  mLayoutManager.setAutoMeasureEnabled(false);

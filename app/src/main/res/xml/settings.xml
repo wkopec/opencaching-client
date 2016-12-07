@@ -4,9 +4,15 @@
     <PreferenceCategory
         android:title="@string/general">
         <EditTextPreference
-            android:title="@string/username"
+            android:title="@string/view_map_as"
             android:key="prefUsername" />
 
+        <Preference
+            android:title="@string/logged_as"
+            android:key="prefLoggedAs"
+            android:summary="@string/logged_as_summary"/>
+
     </PreferenceCategory>
+
 
 </PreferenceScreen>

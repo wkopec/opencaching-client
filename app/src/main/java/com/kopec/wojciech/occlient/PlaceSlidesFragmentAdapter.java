@@ -7,7 +7,6 @@ import android.support.v4.app.FragmentPagerAdapter;
 import com.viewpagerindicator.IconPagerAdapter;
 import java.util.ArrayList;
 
-
 /**
  * Created by Wojtek on 2016-08-07.
  */

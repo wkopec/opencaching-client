@@ -79,12 +79,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_maps);
         sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
         jsonPreferences = getSharedPreferences("jsonCacheObjects", Context.MODE_PRIVATE);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
+
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
@@ -93,9 +90,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mMap = googleMap;
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50.062271, 19.938301), 10));
-        //mMap.getUiSettings().setZoomControlsEnabled(true);
-        //mMap.setMapType(googleMap.MAP_TYPE_SATELLITE);
-
 
         Set<String> waypointsSet = sharedPreferences.getStringSet("savedWaypoints", new HashSet<String>());
         showWaypoints(new ArrayList<>(waypointsSet));
@@ -170,7 +164,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     showFilterDialog();
                 }
 
-
                 return true;
 
             case R.id.action_save_caches:
@@ -207,10 +200,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 return true;
 
+            case R.id.action_logout:
+
+                SharedPreferences.Editor Editor = sharedPreferences.edit();
+                Editor.putString("username", "");
+                Editor.putString("oauth_token", "");
+                Editor.putString("oauth_token_secret", "").apply();
+
+                    return true;
+
+            case R.id.action_login:
+
+                Intent authorizationIntent = new Intent(this, AuthorizationActivity.class);
+                startActivity(authorizationIntent);
+
+                return true;
+
             case R.id.action_clear_map:
                 clearMap();
 
                 return true;
+
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -234,7 +244,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             protected Void doInBackground(Void... params) {
                 try {
-                    String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=mcuwKK4dZSphKHzD5K4C&center=" + center + limit;
+                    String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&center=" + center + limit;
                     if(! sharedPreferences.getString("user_uuid", "").equals("")){
                         if (sharedPreferences.getBoolean("notFound", true))
                             urlString += "&not_found_by=" + sharedPreferences.getString("user_uuid", "");
@@ -243,7 +253,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
 
                     JSONObject jsonObj = jsonObjectRequest(new URL(urlString));
-
                     JSONArray list = jsonObj.getJSONArray("results");
 
                     if(isSavingOffline){
@@ -314,21 +323,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     String urlString;
                     if(isSavingOffline){
                         String logsLimit = "999";
-                        urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations|location|status|code|description|hint2|images|latest_logs&cache_codes=" + codes + "&lpc=" + logsLimit;
+                        urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&fields=name|type|size2|rating|owner|recommendations|location|status|code|description|hint2|images|latest_logs&cache_codes=" + codes + "&lpc=" + logsLimit;
                     }
                     else{
-                        urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=mcuwKK4dZSphKHzD5K4C&fields=name|type|size2|rating|owner|recommendations|location|status|code&cache_codes=" + codes;
+                        urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&fields=name|type|size2|rating|owner|recommendations|location|status|code&cache_codes=" + codes;
                     }
 
                     JSONObject response = jsonObjectRequest(new URL(urlString));
 
-                    Set<String> waypointsSet = sharedPreferences.getStringSet("savedWaypoints", new HashSet<String>());
-                    waypointsSet.addAll(new HashSet<>(waypointList));
-                    SharedPreferences.Editor mEditor = sharedPreferences.edit();
-                    mEditor.putStringSet("savedWaypoints", waypointsSet);
-                    mEditor.apply();
-
+                    if(isSavingOffline){
+                        Set<String> waypointsSet = sharedPreferences.getStringSet("savedWaypoints", new HashSet<String>());
+                        waypointsSet.addAll(new HashSet<>(waypointList));
+                        SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                        mEditor.putStringSet("savedWaypoints", waypointsSet);
+                        mEditor.apply();
+                    }
                     SharedPreferences.Editor jsonEditor = jsonPreferences.edit();
+
                     if(isSavingOffline){
                         for (int i = 0; i < waypointList.size(); i++) {
                             jsonEditor.putString(waypointList.get(i), response.getJSONObject(waypointList.get(i)).toString());
@@ -349,7 +360,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             globalJsonObject.put(waypointList.get(i), response.getJSONObject(waypointList.get(i)));
                         }
                     }
-
                 } catch (UnknownHostException uhe) {
                     runOnUiThread(new Runnable() {
                         @Override
@@ -366,7 +376,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             protected void onProgressUpdate(Integer... values) {
                 super.onProgressUpdate(values);
-
                 mProgressDialog.setProgress(values[0] + 1);
             }
 
@@ -477,7 +486,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void showCacheInfo(final String code, final Marker marker) throws JSONException {
 
-
         JSONObject jsonObject;
         if(jsonPreferences.getString(code, null) != null){
             jsonObject = new JSONObject(jsonPreferences.getString(code, null));
@@ -502,7 +510,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (lastSelectedMarker != null) setPreviousMarkerDisable();
             lastSelectedMarker = marker;
             lastSelectedMarkerType = jsonObject.getString("type");
-
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -512,9 +519,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
         fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
-
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
-
     }
 
     public void setMarkerSelected(Marker marker, String type) {
@@ -597,7 +602,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         bmp.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
         File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + waypoint);
-
         fotoDirectory.mkdirs();
 
         try {
@@ -651,13 +655,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-
                         clearMap();
-
                         LatLng mapCenterLatLng = mMap.getCameraPosition().target;
                         String mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
                         String limit = "&limit=200";
-
                         SharedPreferences.Editor mEditor = sharedPreferences.edit();
                         mEditor.putBoolean("notFound", selectedFilters[0]);
                         mEditor.putBoolean("found", selectedFilters[1]);
@@ -666,7 +667,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         mEditor.putBoolean("temporarilyUnavailable", selectedFilters[4]);
                         mEditor.putBoolean("archived", selectedFilters[5]);
                         mEditor.apply();
-
                         waypointsRequest(mapCenterString, limit, false);
                     }
                 })
@@ -699,7 +699,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 for (File child : path.listFiles()) {
                     result &= delete(child);
                 }
-                result &= path.delete(); // Delete empty directory.
+                result &= path.delete();
             } else if (path.isFile()) {
                 result = path.delete();
             }
@@ -721,7 +721,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String[] parts;
                 parts = mapCenter.split("\\|");
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])), 10));
-
                 waypointsRequest(mapCenter, limit, true);
             }
         }

@@ -95,22 +95,16 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
         EditText e = (EditText) findViewById(R.id.map_center_edit);
         DecimalFormat format = new DecimalFormat("0.#######");
         e.setText(format.format(mapCenterLatLng.latitude) + ", " + format.format(mapCenterLatLng.longitude));
-
     }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
-        // On selecting a spinner item
         String item = parent.getItemAtPosition(position).toString();
-
-        // Showing selected spinner item
         Toast.makeText(parent.getContext(), "Selected: " + item, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
-
     }
 
     public static void hideSoftKeyboard(Activity activity) {
@@ -163,7 +157,6 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
                 .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-
                         SharedPreferences.Editor mEditor = sharedPreferences.edit();
                         mEditor.putBoolean("notFound", selectedFilters[0]);
                         mEditor.putBoolean("found", selectedFilters[1]);
@@ -172,7 +165,6 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
                         mEditor.putBoolean("temporarilyUnavailable", selectedFilters[4]);
                         mEditor.putBoolean("archived", selectedFilters[5]);
                         mEditor.apply();
-
                     }
                 })
                 .setNegativeButton("Anuluj", new DialogInterface.OnClickListener() {
@@ -192,7 +184,6 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
                 for (int i = 0; i<selectedFilters.length; i++) {
                     list.setItemChecked(i, selectedFilters[i]);
                 }
-
             }
         });
         multichoiceDialog.show();

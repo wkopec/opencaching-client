@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 import java.io.ByteArrayOutputStream;
 
 /**
@@ -49,17 +48,11 @@ public final class PlaceSlideFragment extends Fragment {
                 Intent intent = new Intent(getActivity(), PictureActivity.class);
                 intent.putExtras(b);
                 startActivity(intent);
-
             }
         });
 
         image.setImageBitmap(imageResourceId);
-
-
-
-
         LinearLayout layout = new LinearLayout(getActivity());
-
         layout.setGravity(Gravity.CENTER);
         layout.addView(image);
 

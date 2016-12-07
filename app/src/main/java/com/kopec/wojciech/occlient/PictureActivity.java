@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
-
 import uk.co.senab.photoview.PhotoViewAttacher;
 
 /**
@@ -24,7 +23,6 @@ public class PictureActivity extends AppCompatActivity {
         Bundle bundle = getIntent().getExtras();
         byte[] byteArray = bundle.getByteArray("image");
         Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-
 
         ImageView imageView = (ImageView) findViewById(R.id.picture);
         imageView.setImageBitmap(bmp);

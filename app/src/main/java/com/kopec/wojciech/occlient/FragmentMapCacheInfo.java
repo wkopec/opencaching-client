@@ -3,7 +3,6 @@ package com.kopec.wojciech.occlient;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -40,7 +39,6 @@ public class FragmentMapCacheInfo extends android.support.v4.app.Fragment{
         TextView ratingView = (TextView) myInflatedView.findViewById(R.id.ratingTextView);
         TextView ownerView = (TextView) myInflatedView.findViewById(R.id.ownerTextView);
         TextView recommendationsView = (TextView) myInflatedView.findViewById(R.id.recommendationsTextView);
-
 
         nameView.setText(globalBundle.getString("name"));
         typeView.setText("(" + checkType(globalBundle.getString("type")) + ")");

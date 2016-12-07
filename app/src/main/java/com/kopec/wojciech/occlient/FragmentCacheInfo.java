@@ -71,7 +71,7 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                         response = new JSONObject(jsonPreferences.getString(globalBundle.getString("waypoint"), null));
                     }
                     else{
-                        urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=mcuwKK4dZSphKHzD5K4C&cache_code=" +  globalBundle.getString("waypoint") + "&fields=description|hint2|images";
+                        urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&cache_code=" +  globalBundle.getString("waypoint") + "&fields=description|hint2|images";
                         response = jsonObjectRequest(new URL(urlString));
                     }
 
@@ -123,8 +123,6 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                     if(cacheObject.bigImgList != null){
                         for(int i=0; i<cacheObject.bigImgList.size(); i++) {
 
-
-                            //File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + globalBundle.getString("waypoint") + File.separator + images.getJSONObject(i).getString("unique_caption") + ".jpg");
                             File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + globalBundle.getString("waypoint") + File.separator + (i+1) + ".jpg");
                             Log.d("Adres", fotoDirectory.toString());
                             if(fotoDirectory.exists()){
@@ -138,13 +136,6 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                                 Bitmap bmp = BitmapFactory.decodeStream(in);
                                 imgDraws.add(bmp);
                             }
-
-
-
-
-//                            InputStream in = new URL(cacheObject.bigImgList.get(i)).openStream();
-//                            Bitmap bmp = BitmapFactory.decodeStream(in);
-//                            imgDraws.add(bmp);
                         }
                     }
 
@@ -185,7 +176,6 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
 
                     Button button = (Button) rootView.findViewById(R.id.show_gallery);
                     button.setEnabled(true);
-
                 }
             }
         }.execute();

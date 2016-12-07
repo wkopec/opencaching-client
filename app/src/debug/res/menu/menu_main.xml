@@ -34,11 +34,21 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/action_login"
         android:orderInCategory="3"
-        android:title="@string/action_settings"
+        android:title="@string/log_in"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="4"
+        android:title="@string/log_out"
+        app:showAsAction="" />
 
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="5"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
 
 </menu>

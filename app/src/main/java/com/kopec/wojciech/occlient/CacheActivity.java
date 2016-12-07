@@ -5,7 +5,6 @@ import android.net.Uri;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -16,17 +15,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import java.util.Locale;
 
 public class CacheActivity extends AppCompatActivity {
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private Bundle bundle;
-
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
     private ViewPager mViewPager;
 
     @Override
@@ -40,7 +34,6 @@ public class CacheActivity extends AppCompatActivity {
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section1));
         tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section2));
-        //tabLayout.addTab(tabLayout.newTab().setText(R.string.title_section3));
         tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
         final ViewPager viewPager = (ViewPager) findViewById(R.id.container);
@@ -53,28 +46,21 @@ public class CacheActivity extends AppCompatActivity {
 
             @Override
             public void onTabUnselected(TabLayout.Tab tab) {
-
             }
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-
             }
         });
 
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
-        // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
     }
 
-    //MENU
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_cache, menu);
         return true;
     }
@@ -86,7 +72,7 @@ public class CacheActivity extends AppCompatActivity {
             case R.id.navigate_to_cache:
                 String loc = bundle.getString("location");
                 String[] parts = loc.split("\\|");
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q="+parts[0]+","+parts[1]));
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=" + parts[0] + "," + parts[1]));
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
 
@@ -94,25 +80,10 @@ public class CacheActivity extends AppCompatActivity {
             case R.id.action_settings:
 
                 return true;
-//            case R.id.action_refresh:
-//                // refresh
-//                return true;
-//            case R.id.action_help:
-//                // help action
-//                return true;
-//            case R.id.action_check_updates:
-//                // check for updates action
-//                return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
-
-//        int id = item.getItemId();
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
     }
 
     public void showHint(View view) {
@@ -141,7 +112,6 @@ public class CacheActivity extends AppCompatActivity {
         else{
             galleryView.setVisibility(View.GONE);
         }
-
     }
 
     /**
@@ -161,8 +131,6 @@ public class CacheActivity extends AppCompatActivity {
                     return FragmentCacheInfo.newInstance(position, bundle);
                 case 1:
                     return FragmentCacheLogs.newInstance(position, bundle);
-//                case 2:
-//                    return FragmentCachePhotos.newInstance(position);
                 default:
                     return null;
             }
@@ -170,7 +138,6 @@ public class CacheActivity extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            // Show 2 total pages.
             return 2;
         }
 
@@ -182,8 +149,6 @@ public class CacheActivity extends AppCompatActivity {
                     return getString(R.string.title_section1).toUpperCase(l);
                 case 1:
                     return getString(R.string.title_section2).toUpperCase(l);
-//                case 2:
-//                    return getString(R.string.title_section3).toUpperCase(l);
             }
             return null;
         }

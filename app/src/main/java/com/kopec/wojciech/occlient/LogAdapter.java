@@ -30,9 +30,6 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         CacheLog cacheLog = cacheList.get(position);
         holder.dateTextView.setText(cacheLog.date);
         holder.usernameTextView.setText(cacheLog.username);
-
-        //holder.commentTextView.setText(Html.fromHtml(cacheLog.comment));
-
         holder.commentWebView.getSettings().setJavaScriptEnabled(true);
         holder.commentWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         holder.commentWebView.loadDataWithBaseURL(null, cacheLog.comment, "text/html", "UTF-8", null);
