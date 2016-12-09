@@ -58,6 +58,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                         response = new MyClass(sharedPreferences.getString("username", "")).execute().get();
                     }
                     else if(response.equals("")){
+                        SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                        mEditor.putString("view_map_as_username", "");
+                        mEditor.putString("user_uuid", "").apply();
                         preference.setSummary("");
                     }
                 } catch (InterruptedException | ExecutionException e) {
@@ -180,8 +183,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
 
         if (requestCode == 2) {
             if(resultCode == Activity.RESULT_OK){
-                SharedPreferences.Editor mEditor = sharedPreferences.edit();
-                mEditor.putString("username", data.getStringExtra("username")).apply();
                 loggedAsPreference.setSummary(data.getStringExtra("username"));
                 if(usernamePreferences.getSummary().equals("") || usernamePreferences.getSummary().equals(data.getStringExtra("username"))){
                     SharedPreferences.Editor Editor = sharedPreferences.edit();

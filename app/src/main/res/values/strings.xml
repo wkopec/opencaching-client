@@ -52,8 +52,26 @@
     <string name="internet_connection_error">Brak dostępu do Internetu</string>
     <string name="couldnt_find_username">Nie znaleziono użytkownika</string>
     <string name="logged_in_successfully">Zalogowamo pomyślnie</string>
-
-
+    <string name="date">Data</string>
+    <string name="add_new_log">Nowy wpis</string>
+    <string name="new_log">Nowy wpis</string>
+    <string name="found_it">Znaleziona</string>
+    <string name="didnt_found_it">Nieznaleziona</string>
+    <string name="comment">Komentarz</string>
+    <string name="need_maintenance">Potrzebny serwis</string>
+    <string name="maintenance_performed">Serwis wykonany</string>
+    <string name="will_attend">Zamierza uczestniczyć</string>
+    <string name="attended">Uczestniczył</string>
+    <string name="choose_log_type">Wybierz typ logu</string>
+    <string name="poor">Słaba</string>
+    <string name="below_average">Poniżej przeciętnej</string>
+    <string name="average">Normalna</string>
+    <string name="good">Dobra</string>
+    <string name="excellent">Znakomita</string>
+    <string name="change">Zmień</string>
+    <string name="add_recommendation">Daj rekomendację</string>
+    <string name="content_entry">Treść wpisu...</string>
+    <string name="add_log">Dodaj wpis</string>
 
     <string-array name="filters">
         <item>@string/found</item>
@@ -72,5 +90,13 @@
         <item>@string/only_very_good</item>
     </string-array>
 
+    <string-array name="log_type">
+        <item>@string/choose_log_type</item>
+        <item>@string/found_it</item>
+        <item>@string/didnt_found_it</item>
+        <item>@string/comment</item>
+        <item>@string/need_maintenance</item>
+        <item>@string/maintenance_performed</item>
+    </string-array>
 
 </resources>

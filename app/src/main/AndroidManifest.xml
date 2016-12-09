@@ -49,6 +49,11 @@
             android:parentActivityName=".MapsActivity" />
 
         <activity
+            android:name=".NewLogActivity"
+            android:label="@string/new_log"
+            android:parentActivityName=".CacheActivity" />
+
+        <activity
             android:name=".AuthorizationActivity"
             android:label="@string/authorization"
             android:parentActivityName=".MapsActivity" >

@@ -24,7 +24,6 @@ import com.github.scribejava.core.model.Verb;
 import com.github.scribejava.core.oauth.OAuth10aService;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.IOException;
 
 public class AuthorizationActivity extends AppCompatActivity {
@@ -74,6 +73,8 @@ public class AuthorizationActivity extends AppCompatActivity {
 
                 mWebView = (WebView) findViewById(R.id.authorizationWebView);
                 mWebView.setVisibility(View.VISIBLE);
+                mWebView.getSettings().setBuiltInZoomControls(true);
+                mWebView.getSettings().setDisplayZoomControls(false);
                 mWebView.getSettings().setJavaScriptEnabled(true);
                 mWebView.setWebViewClient(new WebViewClient() {
                     public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -84,7 +85,6 @@ public class AuthorizationActivity extends AppCompatActivity {
                             String token = pairs[0].replace("oauth_token=", "");
                             verifier = pairs[1].replace("oauth_verifier=", "");
                             getOauthToken();
-
                         }
                     }
                 });
@@ -114,6 +114,13 @@ public class AuthorizationActivity extends AppCompatActivity {
                     SharedPreferences.Editor mEditor = sharedPreferences.edit();
                     mEditor.putString("oauth_token", oauthToken);
                     mEditor.putString("oauth_token_secret", oauthSecretToken);
+                    mEditor.putString("username", json.getString("username"));
+                    mEditor.putString("logged_user_uuid", json.getString("uuid"));
+
+                    if(sharedPreferences.getString("view_map_as_username", "").equals(sharedPreferences.getString("username", "")) || sharedPreferences.getString("view_map_as_username", "").equals("") ){
+                        mEditor.putString("view_map_as_username", json.getString("username"));
+                        mEditor.putString("user_uuid", json.getString("uuid"));
+                    }
                     mEditor.apply();
 
                     Intent returnIntent = new Intent();

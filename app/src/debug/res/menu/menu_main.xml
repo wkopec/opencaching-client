@@ -43,7 +43,7 @@
         android:id="@+id/action_logout"
         android:orderInCategory="4"
         android:title="@string/log_out"
-        app:showAsAction="" />
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_settings"

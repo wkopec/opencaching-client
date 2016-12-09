@@ -77,7 +77,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(getActivity(), "Brak dostępu do Internetu", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getActivity(), getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
                         }
                     });
                 } catch (Exception e) {

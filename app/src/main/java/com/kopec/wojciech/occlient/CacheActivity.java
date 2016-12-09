@@ -1,20 +1,25 @@
 package com.kopec.wojciech.occlient;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import java.util.Locale;
 
 public class CacheActivity extends AppCompatActivity {
@@ -54,9 +59,23 @@ public class CacheActivity extends AppCompatActivity {
         });
 
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+
+        final FragmentNewLog fragmentNewLog = FragmentNewLog.newInstance(bundle);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.add_new_cache_fragment, fragmentNewLog).commit();
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 3) {
+            if(resultCode == Activity.RESULT_OK){
+                Toast.makeText(CacheActivity.this, "Dodano nowy wpis", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     @Override

@@ -57,6 +57,7 @@ import java.util.Set;
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private static GoogleMap mMap;
+    private GoogleApiClient client;
     private ArrayList<String> globalWaypointList = new ArrayList<>();
     private FragmentMapCacheInfo globalFragmentMapCacheInfo = new FragmentMapCacheInfo();
     private JSONObject globalJsonObject = new JSONObject();
@@ -66,23 +67,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     SharedPreferences sharedPreferences;
     SharedPreferences jsonPreferences;
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-
-    private GoogleApiClient client;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
         sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
         jsonPreferences = getSharedPreferences("jsonCacheObjects", Context.MODE_PRIVATE);
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     @Override
@@ -135,15 +129,28 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 });
     }
+    private MenuItem menuItem;
+    private MenuItem loginItem;
+    private MenuItem logoutItem;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        loginItem = menu.findItem(R.id.action_login);
+        logoutItem = menu.findItem(R.id.action_logout);
+
+        if(sharedPreferences.getString("username", "").equals("")){
+            loginItem.setVisible(true);
+            logoutItem.setVisible(false);
+        }
+        else{
+            loginItem.setVisible(false);
+            logoutItem.setVisible(true);
+        }
+
         return true;
     }
-
-    boolean[] selectedFilters;
-    private MenuItem menuItem;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -204,15 +211,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 SharedPreferences.Editor Editor = sharedPreferences.edit();
                 Editor.putString("username", "");
+                Editor.putString("logged_user_uuid", "");
                 Editor.putString("oauth_token", "");
-                Editor.putString("oauth_token_secret", "").apply();
+                Editor.putString("oauth_token_secret", "");
+                if(sharedPreferences.getString("view_map_as_username", "").equals(sharedPreferences.getString("username", ""))){
+                    Editor.putString("user_uuid", "");
+                }
+                Editor.apply();
 
-                    return true;
+                loginItem.setVisible(true);
+                logoutItem.setVisible(false);
+
+                return true;
 
             case R.id.action_login:
 
                 Intent authorizationIntent = new Intent(this, AuthorizationActivity.class);
-                startActivity(authorizationIntent);
+                startActivityForResult(authorizationIntent, 2);
 
                 return true;
 
@@ -502,6 +517,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             bundle.putString("size", jsonObject.getString("size2"));
             bundle.putString("rating", jsonObject.getString("rating"));
             bundle.putString("owner", jsonObject.getJSONObject("owner").getString("username"));
+            bundle.putString("owner_uuid", jsonObject.getJSONObject("owner").getString("uuid"));
             bundle.putString("recommendations", jsonObject.getString("recommendations"));
             bundle.putString("location", jsonObject.getString("location"));
 
@@ -629,6 +645,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
     }
 
+    boolean[] selectedFilters;
     public void showFilterDialog(){
         selectedFilters = new boolean[6];
         selectedFilters[0] = sharedPreferences.getBoolean("notFound", true);
@@ -712,7 +729,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if (requestCode == 1) {
+        if(requestCode == 1) {
             if(resultCode == Activity.RESULT_OK){
 
                 String mapCenter = data.getStringExtra("mapCenter");
@@ -722,6 +739,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 parts = mapCenter.split("\\|");
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])), 10));
                 waypointsRequest(mapCenter, limit, true);
+            }
+        }
+        if(requestCode == 2){
+            if(resultCode == Activity.RESULT_OK){
+                loginItem.setVisible(false);
+                logoutItem.setVisible(true);
+                Toast.makeText(MapsActivity.this, getString(R.string.logged_in_successfully), Toast.LENGTH_LONG).show();
             }
         }
     }
