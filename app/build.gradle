@@ -34,5 +34,5 @@ dependencies {
     compile 'com.google.android.gms:play-services-appindexing:9.2.0'
     compile 'com.github.chrisbanes.photoview:library:1.2.4'
     compile 'com.github.scribejava:scribejava-apis:3.2.0'
-
+    compile 'com.android.support:support-v4:23.2.1'
 }

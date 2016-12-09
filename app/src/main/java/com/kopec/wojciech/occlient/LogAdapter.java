@@ -8,6 +8,8 @@ import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import static android.R.id.list;
+
 /**
  * Created by Wojtek on 2016-04-24.
  */
@@ -96,4 +98,6 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.CacheLogViewHold
         cacheList.addAll(newLogList);
         notifyDataSetChanged();
     }
+
+
 }

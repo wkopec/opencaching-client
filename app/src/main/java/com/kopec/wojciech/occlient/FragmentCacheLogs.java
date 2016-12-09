@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -27,7 +28,9 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static String waypoint;
     SharedPreferences jsonPreferences;
-
+    LogAdapter mAdapter;
+    RecyclerView mRecyclerView;
+    final int numberOfLogs = 100;
     public FragmentCacheLogs() {
     }
 
@@ -40,11 +43,46 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
         return fragment;
     }
 
+    SwipeRefreshLayout swipeRefreshLayout;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_cache_logs, container, false);
+
+        swipeRefreshLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swiperefreshlayout);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                makeLogsRequest();
+            }
+        });
+
+        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
+        mLayoutManager.setAutoMeasureEnabled(false);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mAdapter = new LogAdapter();
+        mRecyclerView.setAdapter(mAdapter);
+
+        makeLogsRequest();
+
+        return rootView;
+    }
+
+    private JSONObject jsonObjectRequest(URL url) throws JSONException, IOException {
+        BufferedReader reader;
+        reader = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuffer buffer = new StringBuffer();
+        int read;
+        char[] chars = new char[1024];
+        while ((read = reader.read(chars)) != -1) {
+            buffer.append(chars, 0, read);
+        }
+        return new JSONObject(String.valueOf(buffer));
+    }
+
+    private void makeLogsRequest() {
+
         final CacheLog.List logList = new CacheLog.List();
-        final int numberOfLogs = 100;
 
         new AsyncTask<Void, Void, Void>() {
             @TargetApi(Build.VERSION_CODES.KITKAT)
@@ -54,17 +92,16 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                     JSONObject jsonObject;
                     JSONArray list;
                     jsonPreferences = getActivity().getSharedPreferences("jsonCacheObjects", Context.MODE_PRIVATE);
-                    if(jsonPreferences.getString(waypoint, null) != null){
+                    if (jsonPreferences.getString(waypoint, null) != null) {
                         jsonObject = new JSONObject(jsonPreferences.getString(waypoint, null));
                         list = jsonObject.getJSONArray("latest_logs");
-                    }
-                    else{
+                    } else {
                         String urlString = "http://opencaching.pl/okapi/services/caches/geocache?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&cache_code=" + waypoint + "&fields=latest_logs&lpc=" + numberOfLogs;
                         JSONObject response = jsonObjectRequest(new URL(urlString));
                         list = response.getJSONArray("latest_logs");
                     }
                     Log.d("LIST", list.toString());
-                    for(int i=0; i<list.length(); i++){
+                    for (int i = 0; i < list.length(); i++) {
                         JSONObject obj = list.getJSONObject(i);
                         JSONObject loginObj = obj.getJSONObject("user");
                         String date = obj.getString("date");
@@ -83,34 +120,16 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                 } catch (Exception e) {
                     Log.d("ERROR", e.toString());
                 }
-
                 return null;
             }
-             @Override
-             protected void onPostExecute(Void result) {
-                 RecyclerView mRecyclerView = (RecyclerView) rootView.findViewById(R.id.logListView);
-                 RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getActivity());
-                 mLayoutManager.setAutoMeasureEnabled(false);
-                 mRecyclerView.setLayoutManager(mLayoutManager);
-                 LogAdapter mAdapter = new LogAdapter();
-                 mAdapter.addLogs(logList);
-                 mRecyclerView.setAdapter(mAdapter);
-              }
+            @Override
+            protected void onPostExecute(Void result) {
+
+                mAdapter.addLogs(logList);
+                swipeRefreshLayout.setRefreshing(false);
+            }
         }.execute();
 
-        return rootView;
-    }
-
-    private JSONObject jsonObjectRequest(URL url) throws JSONException, IOException {
-        BufferedReader reader;
-        reader = new BufferedReader(new InputStreamReader(url.openStream()));
-        StringBuffer buffer = new StringBuffer();
-        int read;
-        char[] chars = new char[1024];
-        while ((read = reader.read(chars)) != -1) {
-            buffer.append(chars, 0, read);
-        }
-        return new JSONObject(String.valueOf(buffer));
     }
 
 }
