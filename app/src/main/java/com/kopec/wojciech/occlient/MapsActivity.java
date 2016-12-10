@@ -182,22 +182,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             case R.id.action_delete_caches:
 
-                SharedPreferences.Editor mEditor = sharedPreferences.edit();
-                mEditor.putStringSet("savedWaypoints", null);
-                mEditor.apply();
+                deleteSavedCaches(false);
 
-                SharedPreferences.Editor jsonEditor = jsonPreferences.edit();
-                jsonEditor.clear().apply();
-
-                clearMap();
-
-                File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map");
-                if(delete(fotoDirectory)){
-                    Toast.makeText(MapsActivity.this, "Usunięto pomyślnie", Toast.LENGTH_LONG).show();
-                }
-                else{
-                    Toast.makeText(MapsActivity.this, "Brak skrzynek do usunięcia", Toast.LENGTH_LONG).show();
-                }
                 return true;
 
             case R.id.action_settings:
@@ -313,16 +299,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void cachesRequest(final ArrayList<String> waypointList, final boolean isSavingOffline) {
 
-        final ProgressDialog mProgressDialog = new ProgressDialog(MapsActivity.this);
-        if(isSavingOffline){
-            mProgressDialog.setTitle("Pobieranie...");
-            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            mProgressDialog.setMax(waypointList.size());
-            mProgressDialog.setProgress(0);
-            mProgressDialog.show();
-        }
+        //final ProgressDialog mProgressDialog = new ProgressDialog(MapsActivity.this);
 
-        new AsyncTask<Void, Integer, Void>() {
+        final AsyncTask<Void, Integer, Void> task = new AsyncTask<Void, Integer, Void>() {
+            boolean isCanceled = false;
+            final ProgressDialog mProgressDialog = new ProgressDialog(MapsActivity.this);
+            @Override
+            protected void onPreExecute()
+            {
+                if(isSavingOffline){
+                    this.mProgressDialog.setTitle(getString(R.string.downloading));
+                    this.mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                    this.mProgressDialog.setMax(waypointList.size());
+                    this.mProgressDialog.setProgress(0);
+                    this.mProgressDialog.setCanceledOnTouchOutside(false);
+                    this.mProgressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //task.cancel(true);
+                            isCanceled = true;
+                            cancel(false);
+                        }
+                    });
+                    this.mProgressDialog.show();
+                }
+            }
+
             @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
             protected Void doInBackground(Void... params) {
@@ -335,15 +337,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
                     }
 
-                    String urlString;
+                    String urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=" + getString(R.string.OKAPIConsumerKey);
                     if(isSavingOffline){
+                        String fields = "name|type|size2|rating|owner|recommendations|location|status|req_passwd|code|description|hint2|images|latest_logs";
+                        if(!sharedPreferences.getString("username", "").equals("")){
+                            urlString += "&user_uuid=" + sharedPreferences.getString("logged_user_uuid", "");
+                            fields += "|is_found";
+                        }
                         String logsLimit = "999";
-                        urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&fields=name|type|size2|rating|owner|recommendations|location|status|code|description|hint2|images|latest_logs&cache_codes=" + codes + "&lpc=" + logsLimit;
+                        urlString += "&fields=" + fields + "&cache_codes=" + codes + "&lpc=" + logsLimit;
                     }
                     else{
-                        urlString = "http://opencaching.pl/okapi/services/caches/geocaches?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&fields=name|type|size2|rating|owner|recommendations|location|status|code&cache_codes=" + codes;
+                        String fields ="name|type|size2|rating|owner|recommendations|location|status|req_passwd|code";
+                        if(!sharedPreferences.getString("username", "").equals("")){
+                            urlString += "&user_uuid=" + sharedPreferences.getString("logged_user_uuid", "");
+                            fields += "|is_found";
+                        }
+                        urlString += "&fields=" + fields + "&cache_codes=" + codes;
                     }
-
+                    Log.d("URL", urlString);
                     JSONObject response = jsonObjectRequest(new URL(urlString));
 
                     if(isSavingOffline){
@@ -357,6 +369,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     if(isSavingOffline){
                         for (int i = 0; i < waypointList.size(); i++) {
+                            if(isCanceled)
+                                break;
                             jsonEditor.putString(waypointList.get(i), response.getJSONObject(waypointList.get(i)).toString());
 
                             final JSONArray images = response.getJSONObject(waypointList.get(i)).getJSONArray("images");
@@ -372,6 +386,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     else{
                         for (int i = 0; i < waypointList.size(); i++) {
+                            if(isCanceled)
+                                break;
                             globalJsonObject.put(waypointList.get(i), response.getJSONObject(waypointList.get(i)));
                         }
                     }
@@ -379,7 +395,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MapsActivity.this, "Brak dostępu do Internetu", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MapsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
                         }
                     });
                 } catch (Exception e) {
@@ -395,10 +411,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
             @Override
+            protected void onCancelled() {
+                //called on ui thread
+                if (this.mProgressDialog != null) {
+                    this.mProgressDialog.dismiss();
+                }
+                deleteSavedCaches(true);
+            }
+
+            @Override
             protected void onPostExecute(Void result) {
-
                 if(isSavingOffline){
-
                     mProgressDialog.dismiss();
                     showWaypoints(waypointList);
                 }
@@ -520,6 +543,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             bundle.putString("owner_uuid", jsonObject.getJSONObject("owner").getString("uuid"));
             bundle.putString("recommendations", jsonObject.getString("recommendations"));
             bundle.putString("location", jsonObject.getString("location"));
+            bundle.putBoolean("req_passwd", jsonObject.getBoolean("req_passwd"));
+
+            if(!sharedPreferences.getString("username", "").equals("")){
+                bundle.putBoolean("is_found", jsonObject.getBoolean("is_found"));
+                bundle.putString("downloaded_by_username_uuid", sharedPreferences.getString("logged_user_uuid", ""));
+
+            }
 
             setMarkerSelected(marker, jsonObject.getString("type"));
 
@@ -709,6 +739,29 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         multichoiceDialog.show();
     }
 
+    private void deleteSavedCaches(boolean isCanceled) {
+        SharedPreferences.Editor mEditor = sharedPreferences.edit();
+        mEditor.putStringSet("savedWaypoints", null);
+        mEditor.apply();
+
+        SharedPreferences.Editor jsonEditor = jsonPreferences.edit();
+        jsonEditor.clear().apply();
+
+        clearMap();
+
+        File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map");
+        if(delete(fotoDirectory) && !isCanceled){
+            Toast.makeText(MapsActivity.this, getString(R.string.deleted_successfully), Toast.LENGTH_LONG).show();
+        }
+        else if(isCanceled){
+            Toast.makeText(MapsActivity.this, getString(R.string.canceled), Toast.LENGTH_LONG).show();
+        }
+        else{
+            Toast.makeText(MapsActivity.this, getString(R.string.no_caches_to_delete), Toast.LENGTH_LONG).show();
+        }
+
+    }
+
     public static boolean delete(File path) {
         boolean result = true;
         if (path.exists()) {
@@ -746,6 +799,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 loginItem.setVisible(false);
                 logoutItem.setVisible(true);
                 Toast.makeText(MapsActivity.this, getString(R.string.logged_in_successfully), Toast.LENGTH_LONG).show();
+            }
+            if(resultCode == Activity.RESULT_CANCELED){
+                Toast.makeText(this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
             }
         }
     }

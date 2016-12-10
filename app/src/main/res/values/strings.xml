@@ -72,6 +72,12 @@
     <string name="add_recommendation">Daj rekomendację</string>
     <string name="content_entry">Treść wpisu...</string>
     <string name="add_log">Dodaj wpis</string>
+    <string name="log_password_required">Wymagane hasło do logu</string>
+    <string name="log_password">Hasło do logu</string>
+    <string name="downloading">Pobieranie...</string>
+    <string name="deleted_successfully">Usunięto pomyślnie</string>
+    <string name="no_caches_to_delete">Brak skrzynek do usunięcia</string>
+    <string name="canceled">Anulowano</string>
 
     <string-array name="filters">
         <item>@string/found</item>

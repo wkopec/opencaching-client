@@ -6,6 +6,8 @@ import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -192,6 +194,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                 else usernamePreferences.setSummary(sharedPreferences.getString("view_map_as_username", ""));
                 Toast.makeText(SettingsActivity.this, getString(R.string.logged_in_successfully), Toast.LENGTH_LONG).show();
             }
+            if(resultCode == Activity.RESULT_CANCELED){
+                Toast.makeText(SettingsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -205,5 +210,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
             buffer.append(chars, 0, read);
         }
         return new JSONObject(String.valueOf(buffer));
+    }
+
+    public boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 }

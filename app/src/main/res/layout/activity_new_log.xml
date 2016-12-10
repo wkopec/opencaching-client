@@ -71,6 +71,15 @@
         android:hint="@string/content_entry"
         android:gravity="left|top" />
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/log_password"
+        android:ems="10"
+        android:layout_marginTop="10dp"
+        android:id="@+id/logPasswordEditText"
+        android:visibility="gone"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

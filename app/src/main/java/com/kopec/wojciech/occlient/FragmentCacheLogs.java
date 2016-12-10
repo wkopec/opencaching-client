@@ -111,6 +111,7 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
                         logList.add(new CacheLog(day, obj.getString("type"), obj.getString("comment"), loginObj.getString("username")));
                     }
                 } catch (UnknownHostException uhe) {
+
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -124,8 +125,9 @@ public class FragmentCacheLogs extends android.support.v4.app.Fragment {
             }
             @Override
             protected void onPostExecute(Void result) {
-
-                mAdapter.addLogs(logList);
+                if(!logList.isEmpty()){
+                    mAdapter.addLogs(logList);
+                }
                 swipeRefreshLayout.setRefreshing(false);
             }
         }.execute();

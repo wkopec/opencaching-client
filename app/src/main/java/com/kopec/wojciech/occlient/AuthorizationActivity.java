@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,6 +39,13 @@ public class AuthorizationActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if(!isOnline()){
+            Intent returnIntent = new Intent();
+            setResult(Activity.RESULT_CANCELED,returnIntent);
+            finish();
+            return;
+        }
 
         setContentView(R.layout.activity_authorization);
         sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
@@ -117,7 +126,7 @@ public class AuthorizationActivity extends AppCompatActivity {
                     mEditor.putString("username", json.getString("username"));
                     mEditor.putString("logged_user_uuid", json.getString("uuid"));
 
-                    if(sharedPreferences.getString("view_map_as_username", "").equals(sharedPreferences.getString("username", "")) || sharedPreferences.getString("view_map_as_username", "").equals("") ){
+                    if(sharedPreferences.getString("view_map_as_username", "").equals(sharedPreferences.getString("username", "")) || sharedPreferences.getString("user_uuid", "").equals("") ){
                         mEditor.putString("view_map_as_username", json.getString("username"));
                         mEditor.putString("user_uuid", json.getString("uuid"));
                     }
@@ -129,13 +138,18 @@ public class AuthorizationActivity extends AppCompatActivity {
                     setResult(Activity.RESULT_OK,returnIntent);
                     finish();
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
+                } catch (IOException | JSONException e) {
                     e.printStackTrace();
                 }
                 return null;
             }
         }.execute();
     }
+
+    public boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
 }
