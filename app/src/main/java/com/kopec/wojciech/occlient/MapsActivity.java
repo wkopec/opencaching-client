@@ -83,7 +83,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50.062271, 19.938301), 10));
+
+        float mapLat = sharedPreferences.getFloat("startMapLat", (float)51.92);
+        float mapLang = sharedPreferences.getFloat("startMapLang", (float)19.15);
+        float mapZoom = sharedPreferences.getFloat("startMapZoom", (float)5.6);
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mapLat, mapLang), mapZoom));
 
         Set<String> waypointsSet = sharedPreferences.getStringSet("savedWaypoints", new HashSet<String>());
         showWaypoints(new ArrayList<>(waypointsSet));
@@ -299,8 +304,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void cachesRequest(final ArrayList<String> waypointList, final boolean isSavingOffline) {
 
-        //final ProgressDialog mProgressDialog = new ProgressDialog(MapsActivity.this);
-
         final AsyncTask<Void, Integer, Void> task = new AsyncTask<Void, Integer, Void>() {
             boolean isCanceled = false;
             final ProgressDialog mProgressDialog = new ProgressDialog(MapsActivity.this);
@@ -412,7 +415,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             protected void onCancelled() {
-                //called on ui thread
                 if (this.mProgressDialog != null) {
                     this.mProgressDialog.dismiss();
                 }

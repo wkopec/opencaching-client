@@ -91,6 +91,7 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
     }
 
     public void onReturnMapCenter(LatLng mapCenterLatLng) {
+
         mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
         EditText e = (EditText) findViewById(R.id.map_center_edit);
         DecimalFormat format = new DecimalFormat("0.#######");

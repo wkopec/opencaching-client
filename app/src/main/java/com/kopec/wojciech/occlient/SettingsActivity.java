@@ -6,6 +6,8 @@ import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -16,7 +18,11 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.Toast;
+
+import com.google.android.gms.maps.model.LatLng;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.BufferedReader;
@@ -25,6 +31,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 public class SettingsActivity extends AppCompatPreferenceActivity{
@@ -32,8 +41,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
     SharedPreferences sharedPreferences;
     Preference loggedAsPreference;
     Preference usernamePreferences;
+    Preference coordinatesPreferences;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
         setupActionBar();
@@ -48,16 +60,17 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
 
+            Log.d("cos", value.toString());
             if(preference.getKey().equals("prefUsername")){
                 usernamePreferences = preference;
                 preference.setSummary(sharedPreferences.getString("view_map_as_username", ""));
                 String response = "";
                 try {
                     if(!value.toString().equals("")){
-                        response = new MyClass(value.toString()).execute().get();
+                        response = new MapUsername(value.toString()).execute().get();
                     }
                     if(response.equals("") && !sharedPreferences.getString("username", "").equals("")){
-                        response = new MyClass(sharedPreferences.getString("username", "")).execute().get();
+                        response = new MapUsername(sharedPreferences.getString("username", "")).execute().get();
                     }
                     else if(response.equals("")){
                         SharedPreferences.Editor mEditor = sharedPreferences.edit();
@@ -72,13 +85,19 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                     preference.setSummary(response);
                 }
             }
-            if(preference.getKey().equals("prefLoggedAs")){
+            else if(preference.getKey().equals("prefLoggedAs")){
                 if(!sharedPreferences.getString("username", "").equals("")) {
                     preference.setSummary(sharedPreferences.getString("username", getString(R.string.logged_as_summary)));
                 }
                 else preference.setSummary(getString(R.string.logged_as_summary));
-
             }
+            else if(preference.getKey().equals("prefCoordinates")){
+                preference.setSummary(sharedPreferences.getString("startMapCoordinates", ""));
+            }
+//            if(preference.getKey().equals("prefCoordinates")){
+//                Log.d("Test","KLASYK");
+//
+//            }
             return true;
         }
     };
@@ -89,6 +108,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                 loggedAsPreference = preference;
                 startAuthorizationIntent();
             }
+            if(preference.getKey().equals("prefCoordinates")){
+                coordinatesPreferences = preference;
+                android.app.FragmentManager manager = getFragmentManager();
+                DialogMap dialog = new DialogMap();
+                dialog.show(manager, "mapDialog");
+            }
             return false;
         }
     };
@@ -98,6 +123,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
     }
 
     private void bindPreferenceListeners(Preference preference) {
+        Log.d("test", "1");
         preference.setOnPreferenceChangeListener(onPreferenceChange);
         onPreferenceChange.onPreferenceChange(preference,
                 PreferenceManager
@@ -131,15 +157,16 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.settings);
+            bindPreferenceListeners(findPreference("prefCoordinates"));
             bindPreferenceListeners(findPreference("prefUsername"));
             bindPreferenceListeners(findPreference("prefLoggedAs"));
         }
     }
 
-    public class MyClass extends AsyncTask<Void, Void, String> {
+    public class MapUsername extends AsyncTask<Void, Void, String> {
 
         String stringValue;
-        MyClass(String stringValue){
+        MapUsername(String stringValue){
             this.stringValue = stringValue;
         }
 
@@ -198,6 +225,42 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                 Toast.makeText(SettingsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    public void onReturnMapCenter(LatLng mapCenterLatLng, float mapZoom) throws IOException {
+        SharedPreferences.Editor mEditor = sharedPreferences.edit();
+        mEditor.putFloat("startMapLat", (float)mapCenterLatLng.latitude);
+        mEditor.putFloat("startMapLang", (float)mapCenterLatLng.longitude);
+        mEditor.putFloat("startMapZoom", mapZoom);
+
+        Log.d("Lat", String.valueOf(mapCenterLatLng.latitude));
+        Log.d("Lang", String.valueOf(mapCenterLatLng.longitude));
+        Log.d("Zoom", String.valueOf(mapZoom));
+
+        Geocoder gcd = new Geocoder(SettingsActivity.this, Locale.getDefault());
+        List<Address> addresses = gcd.getFromLocation(mapCenterLatLng.latitude, mapCenterLatLng.longitude, 1);
+
+        Log.d("Lokalizacja", addresses.toString());
+
+        if(addresses.size() > 0){
+            if(addresses.get(0).getLocality() != null){
+                mEditor.putString("startMapCoordinates", addresses.get(0).getLocality());
+                coordinatesPreferences.setSummary(addresses.get(0).getLocality());
+            }
+            else if(addresses.get(0).getSubAdminArea() != null){
+                mEditor.putString("startMapCoordinates", getString(R.string.sub_admin) + " " + addresses.get(0).getSubAdminArea());
+                coordinatesPreferences.setSummary(getString(R.string.sub_admin) + " " + addresses.get(0).getSubAdminArea());
+            }
+            else if(addresses.get(0).getAdminArea() != null){
+                mEditor.putString("startMapCoordinates", addresses.get(0).getAdminArea());
+                coordinatesPreferences.setSummary(addresses.get(0).getAdminArea());
+            }
+            else{
+                mEditor.putString("startMapCoordinates", String.valueOf(addresses.get(0).getLatitude()) + ", " + String.valueOf(addresses.get(0).getLongitude()));
+                coordinatesPreferences.setSummary(String.valueOf(addresses.get(0).getLatitude()) + ", " + String.valueOf(addresses.get(0).getLongitude()));
+            }
+        }
+        mEditor.apply();
     }
 
     private JSONObject jsonObjectRequest(URL url) throws JSONException, IOException {

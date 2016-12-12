@@ -7,6 +7,30 @@
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:name="com.google.android.gms.maps.MapFragment" />
+        android:name="com.google.android.gms.maps.MapFragment"
+        android:layout_marginTop="10dp">
+
+        <ImageView
+            android:id="@+id/imageView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/cross"
+            android:layout_gravity="center"
+            android:layout_centerInParent="true"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:textColor="@color/colorPrimary"
+            android:id="@+id/mapZoom"
+            android:textSize="16sp"
+            android:textStyle="bold"/>
+
+    </fragment>
+
+
+
+
 
 </RelativeLayout>

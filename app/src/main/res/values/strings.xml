@@ -48,7 +48,7 @@
     <string name="log_out">Wyloguj się</string>
     <string name="logged_as">Zalogowany jako</string>
     <string name="view_map_as">Przeglądaj mapę jako</string>
-    <string name="logged_as_summary">Niezalogowany. Kliknij aby zalogować</string>
+    <string name="logged_as_summary">Kliknij aby zalogować</string>
     <string name="internet_connection_error">Brak dostępu do Internetu</string>
     <string name="couldnt_find_username">Nie znaleziono użytkownika</string>
     <string name="logged_in_successfully">Zalogowamo pomyślnie</string>
@@ -78,6 +78,8 @@
     <string name="deleted_successfully">Usunięto pomyślnie</string>
     <string name="no_caches_to_delete">Brak skrzynek do usunięcia</string>
     <string name="canceled">Anulowano</string>
+    <string name="coordinates">Współrzędne</string>
+    <string name="sub_admin">Powiat</string>
 
     <string-array name="filters">
         <item>@string/found</item>
