@@ -9,6 +9,6 @@
 
     <include
         layout="@layout/fragment_maps"
-        android:id="@+id/mapa" />
+        android:id="@+id/mainMap" />
 
 </RelativeLayout>

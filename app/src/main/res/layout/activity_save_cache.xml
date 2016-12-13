@@ -7,20 +7,44 @@
     android:layout_height="wrap_content"
     android:id="@+id/save_caches">
 
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/saveMapView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:name="com.google.android.gms.maps.MapFragment">
+
+        <ImageView
+            android:id="@+id/saveMapCross"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/cross"
+            android:layout_gravity="center"
+            android:layout_centerInParent="true"/>
+
+        <!--<ImageView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:src="@drawable/ic_check_circle_black_48dp"-->
+            <!--android:layout_gravity="bottom|right"-->
+            <!--android:layout_marginEnd="50dp"-->
+            <!--android:layout_marginBottom="20dp"-->
+            <!--android:onClick="onSetMapCenterClick"/>-->
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ok"
+            android:onClick="onSetMapCenterClick"
+            android:layout_gravity="bottom|right"
+            android:layout_marginEnd="8dp"/>
+
+    </fragment>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp"
+        android:padding="10dp"
         android:orientation="vertical">
-
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/map_center_edit"
-            android:inputType="text"
-            android:textSize="14sp"
-            android:cursorVisible="false"/>
-
 
         <LinearLayout
             android:layout_width="wrap_content"

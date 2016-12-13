@@ -12,25 +12,32 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import java.text.DecimalFormat;
 
 /**
  * Created by Wojtek on 2016-10-29.
  */
 
-public class SaveCacheActivity extends AppCompatActivity implements  AdapterView.OnItemSelectedListener {
+public class SaveCacheActivity extends AppCompatActivity implements  AdapterView.OnItemSelectedListener, OnMapReadyCallback {
 
     SharedPreferences sharedPreferences;
     String mapCenterString;
+    GoogleMap mMap;
     int limitSeekBar = 100;
     String limit = "&limit=100";
 
@@ -42,6 +49,9 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
         setTitle(R.string.action_save_caches);
         sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
 
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.saveMapView);
+        mapFragment.getMapAsync(this);
+
         Bundle bundle = new Bundle();
         final FragmentSaveCaches fragmentSaveCaches = FragmentSaveCaches.newInstance(bundle);
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -50,18 +60,6 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
 
 //        Spinner spinnerGrade = (Spinner)findViewById(R.id.spinner_grade);
 //        spinnerGrade.setOnItemSelectedListener(this);
-
-        EditText cords = (EditText)findViewById(R.id.map_center_edit);
-        cords.setHint(R.string.set_localization);
-        cords.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                hideSoftKeyboard(SaveCacheActivity.this);
-                android.app.FragmentManager manager = getFragmentManager();
-                DialogMap dialog = new DialogMap();
-                dialog.show(manager, "mapDialog");
-            }
-        });
 
         SeekBar seekBar = (SeekBar)findViewById(R.id.limitSeekBar);
         seekBar.setProgress(100);
@@ -90,14 +88,6 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
         });
     }
 
-    public void onReturnMapCenter(LatLng mapCenterLatLng) {
-
-        mapCenterString = String.valueOf(mapCenterLatLng.latitude) + "|" + String.valueOf(mapCenterLatLng.longitude);
-        EditText e = (EditText) findViewById(R.id.map_center_edit);
-        DecimalFormat format = new DecimalFormat("0.#######");
-        e.setText(format.format(mapCenterLatLng.latitude) + ", " + format.format(mapCenterLatLng.longitude));
-    }
-
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         String item = parent.getItemAtPosition(position).toString();
@@ -108,17 +98,9 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
     public void onNothingSelected(AdapterView<?> parent) {
     }
 
-    public static void hideSoftKeyboard(Activity activity) {
-        InputMethodManager inputMethodManager =
-                (InputMethodManager) activity.getSystemService(
-                        Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(
-                activity.getCurrentFocus().getWindowToken(), 0);
-    }
-
     public void makeRequest() {
         if(mapCenterString == null){
-            Toast.makeText(SaveCacheActivity.this, "Wybierz lokalizację", Toast.LENGTH_LONG).show();
+            Toast.makeText(SaveCacheActivity.this, getString(R.string.choose_coordinates), Toast.LENGTH_LONG).show();
         }
         else{
             Intent returnIntent = new Intent();
@@ -190,13 +172,44 @@ public class SaveCacheActivity extends AppCompatActivity implements  AdapterView
         multichoiceDialog.show();
     }
 
-
     public void onChangeFiltersClick(View view) {
         if(sharedPreferences.getString("user_uuid", "").equals("")){
-            Toast.makeText(SaveCacheActivity.this, "Wprowadź użytkownika w ustawieniach", Toast.LENGTH_LONG).show();
+            Toast.makeText(SaveCacheActivity.this, getString(R.string.set_username_in_settings), Toast.LENGTH_LONG).show();
         }
         else{
             showFilterDialog();
         }
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
+        mMap = googleMap;
+        UiSettings uiSettings = googleMap.getUiSettings();
+        uiSettings.setZoomControlsEnabled(true);
+        mMap.setPadding(0, 0, 0, 90);
+        mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+            @Override
+            public void onCameraChange(CameraPosition cameraPosition) {
+                ImageView cross = (ImageView) findViewById(R.id.saveMapCross);
+                cross.setVisibility(View.VISIBLE);
+            }
+        });
+        float mapLat = sharedPreferences.getFloat("startMapLat", (float)52.41177549551888);
+        float mapLang = sharedPreferences.getFloat("startMapLang", (float)19.17423415929079);
+        float mapZoom = sharedPreferences.getFloat("startMapZoom", (float)5.3173866);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mapLat, mapLang), mapZoom));
+    }
+
+    public void onSetMapCenterClick(View view) {
+        ImageView cross = (ImageView) findViewById(R.id.saveMapCross);
+        cross.setVisibility(View.GONE);
+        mapCenterString = null;
+        mMap.clear();
+        mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(mMap.getCameraPosition().target.latitude, mMap.getCameraPosition().target.longitude))
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_place_black_48dp))
+        );
+        mapCenterString = String.valueOf(mMap.getCameraPosition().target.latitude) + "|" + mMap.getCameraPosition().target.longitude;
     }
 }

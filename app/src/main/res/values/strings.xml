@@ -80,6 +80,8 @@
     <string name="canceled">Anulowano</string>
     <string name="coordinates">Współrzędne</string>
     <string name="sub_admin">Powiat</string>
+    <string name="choose_coordinates">Wybierz lokalizację</string>
+    <string name="set_username_in_settings">Wprowadź użytkownika w ustawieniach</string>
 
     <string-array name="filters">
         <item>@string/found</item>

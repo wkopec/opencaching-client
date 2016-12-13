@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -249,6 +250,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             protected Void doInBackground(Void... params) {
+
+                if(!isConnectedToServer("http://opencaching.pl/", 5000)){
+                    Toast.makeText(MapsActivity.this, "Brak poczenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                    cancel(false);
+                }
+
                 try {
                     String urlString = "http://opencaching.pl/okapi/services/caches/search/nearest?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&center=" + center + limit;
                     if(! sharedPreferences.getString("user_uuid", "").equals("")){
@@ -319,7 +326,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     this.mProgressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel), new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            //task.cancel(true);
                             isCanceled = true;
                             cancel(false);
                         }
@@ -566,7 +572,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
-        fragmentTransaction.replace(R.id.mapa, globalFragmentMapCacheInfo).commit();
+        fragmentTransaction.replace(R.id.mainMap, globalFragmentMapCacheInfo).commit();
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
     }
 
@@ -794,6 +800,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 parts = mapCenter.split("\\|");
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])), 10));
                 waypointsRequest(mapCenter, limit, true);
+
             }
         }
         if(requestCode == 2){
@@ -843,6 +850,21 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
     }
+
+
+    public boolean isConnectedToServer(String url, int timeout) {
+        try{
+            URL myUrl = new URL(url);
+            URLConnection connection = myUrl.openConnection();
+            connection.setConnectTimeout(timeout);
+            connection.connect();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
 }
 
 
