@@ -14,10 +14,12 @@ public class PlaceSlidesFragmentAdapter extends FragmentPagerAdapter implements
         IconPagerAdapter {
 
     private ArrayList<Bitmap> imgDraws;
+    private  boolean[] isSpoilerTab;
     private int mCount;
 
-    public PlaceSlidesFragmentAdapter(FragmentManager fm, ArrayList<Bitmap> bmp) {
+    public PlaceSlidesFragmentAdapter(FragmentManager fm, ArrayList<Bitmap> bmp, boolean[] isSpoilerTab) {
         super(fm);
+        this.isSpoilerTab = isSpoilerTab;
         imgDraws = bmp;
         mCount = imgDraws.size();
     }
@@ -26,7 +28,7 @@ public class PlaceSlidesFragmentAdapter extends FragmentPagerAdapter implements
 
     @Override
     public Fragment getItem(int position) {
-        return new PlaceSlideFragment(imgDraws.get(position));
+        return new PlaceSlideFragment(imgDraws.get(position), isSpoilerTab[position]);
     }
 
     @Override

@@ -38,6 +38,7 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
     PlaceSlidesFragmentAdapter mAdapter;
     ViewPager mPager;
     PageIndicator mIndicator;
+    String[] imageDescription;
 
     private static final String ARG_SECTION_NUMBER = "section_number";
     private static Bundle globalBundle;
@@ -54,7 +55,8 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle bundle) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, final Bundle bundle) {
+
 
         final View rootView = inflater.inflate(R.layout.fragment_cache_info, container, false);
         jsonPreferences = this.getActivity().getSharedPreferences("jsonCacheObjects", Context.MODE_PRIVATE);
@@ -79,14 +81,15 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                     cacheObject.hint = response.getString("hint2");
 
                     final JSONArray images = response.getJSONArray("images");
+                    boolean[] isSpoiler = new boolean[images.length()];
+                    imageDescription = new String[images.length()];
                     for(int i=0; i<images.length(); i++){
                         JSONObject img = images.getJSONObject(i);
-                        String smallImg = img.getString("thumb_url");
-                        String bigImg = img.getString("url");
-                        String imgDescription = img.getString("caption");
-                        boolean is_spoiler = img.getBoolean("is_spoiler");
-                        cacheObject.bigImgList.add(bigImg);
+                        imageDescription[i] = img.getString("caption");
+                        isSpoiler[i] = img.getBoolean("is_spoiler");
+                        cacheObject.bigImgList.add(img.getString("url"));
                     }
+                    cacheObject.isSpoilerTab = isSpoiler;
 
                 } catch (UnknownHostException uhe){
                     getActivity().runOnUiThread(new Runnable(){
@@ -124,21 +127,17 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
                         for(int i=0; i<cacheObject.bigImgList.size(); i++) {
 
                             File fotoDirectory = new File(Environment.getExternalStorageDirectory() + File.separator + "Opencaching Map" + File.separator + globalBundle.getString("waypoint") + File.separator + (i+1) + ".jpg");
-                            Log.d("Adres", fotoDirectory.toString());
                             if(fotoDirectory.exists()){
-                                Log.d("TESTER", "OFFLINE");
                                 Bitmap myBitmap = BitmapFactory.decodeFile(fotoDirectory.getAbsolutePath());
                                 imgDraws.add(myBitmap);
                             }
                             else{
-                                Log.d("TESTER", "ONLINE");
                                 InputStream in = new URL(cacheObject.bigImgList.get(i)).openStream();
                                 Bitmap bmp = BitmapFactory.decodeStream(in);
                                 imgDraws.add(bmp);
                             }
                         }
                     }
-
                 } catch (Exception e) {
                     Log.d("ERROR", e.toString());
                 }
@@ -150,19 +149,27 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
             protected void onPostExecute(Void result) {
 
                 if(!imgDraws.isEmpty()){
-                    mAdapter = new PlaceSlidesFragmentAdapter(getActivity().getSupportFragmentManager(), imgDraws);
+                    mAdapter = new PlaceSlidesFragmentAdapter(getActivity().getSupportFragmentManager(), imgDraws, cacheObject.isSpoilerTab);
                     mPager = (ViewPager) rootView.findViewById(R.id.pager);
                     mPager.setAdapter(mAdapter);
-
                     mIndicator = (CirclePageIndicator) rootView.findViewById(R.id.indicator);
                     mIndicator.setViewPager(mPager);
                     ((CirclePageIndicator) mIndicator).setSnap(true);
                     ((CirclePageIndicator) mIndicator).setRadius(16);
                     ((CirclePageIndicator) mIndicator).setFillColor(R.color.colorPrimaryDark);
+
+                    if(imageDescription[0] != null){
+                        String imgDesc = imageDescription[0];
+                        TextView imageDescription = (TextView) getActivity().findViewById(R.id.photoDescription);
+                        imageDescription.setText(imgDesc);
+                    }
+
                     mIndicator.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
                         @Override
                         public void onPageSelected(int position) {
-                            //Toast.makeText(FragmentCacheInfo.this.getActivity(), "Changed to page " + position, Toast.LENGTH_SHORT).show();
+                            String imgDesc = imageDescription[position];
+                            TextView imageDescription = (TextView) getActivity().findViewById(R.id.photoDescription);
+                            imageDescription.setText(imgDesc);
                         }
                         @Override
                         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -198,6 +205,7 @@ public class FragmentCacheInfo extends android.support.v4.app.Fragment {
     class CacheObject{
         String description = "";
         String hint = "";
+        boolean[] isSpoilerTab;
         ArrayList<String> bigImgList = new ArrayList<>();
     }
 }

@@ -18,11 +18,8 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
 import android.view.MenuItem;
-import android.widget.EditText;
 import android.widget.Toast;
-
 import com.google.android.gms.maps.model.LatLng;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.BufferedReader;
@@ -31,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -60,7 +56,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
 
-            Log.d("cos", value.toString());
             if(preference.getKey().equals("prefUsername")){
                 usernamePreferences = preference;
                 preference.setSummary(sharedPreferences.getString("view_map_as_username", ""));
@@ -92,12 +87,16 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                 else preference.setSummary(getString(R.string.logged_as_summary));
             }
             else if(preference.getKey().equals("prefCoordinates")){
-                preference.setSummary(sharedPreferences.getString("startMapCoordinates", ""));
+                coordinatesPreferences = preference;
+                if(sharedPreferences.getFloat("startMapLat", 0) != 0 && sharedPreferences.getFloat("startMapLang", 0) != 0){
+                    try {
+                        onReturnMapCenter(new LatLng(sharedPreferences.getFloat("startMapLat", 0), sharedPreferences.getFloat("startMapLang", 0)), 10);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-//            if(preference.getKey().equals("prefCoordinates")){
-//                Log.d("Test","KLASYK");
-//
-//            }
+
             return true;
         }
     };
@@ -122,8 +121,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
         startActivityForResult(authorizationIntent, 2);
     }
 
-    private void bindPreferenceListeners(Preference preference) {
-        Log.d("test", "1");
+    private void bindPreferenceListeners(Preference preference){
+
         preference.setOnPreferenceChangeListener(onPreferenceChange);
         onPreferenceChange.onPreferenceChange(preference,
                 PreferenceManager
@@ -220,6 +219,14 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                 }
                 else usernamePreferences.setSummary(sharedPreferences.getString("view_map_as_username", ""));
                 Toast.makeText(SettingsActivity.this, getString(R.string.logged_in_successfully), Toast.LENGTH_LONG).show();
+
+                if(sharedPreferences.getFloat("startMapLat", 0) != 0 && sharedPreferences.getFloat("startMapLang", 0) != 0){
+                    try {
+                        onReturnMapCenter(new LatLng(sharedPreferences.getFloat("startMapLat", 0), sharedPreferences.getFloat("startMapLang", 0)), 10);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
             if(resultCode == Activity.RESULT_CANCELED){
                 Toast.makeText(SettingsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();

@@ -2,6 +2,7 @@ package com.kopec.wojciech.occlient;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.location.Location;
 import android.net.Uri;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -12,14 +13,12 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.util.Locale;
 
 public class CacheActivity extends AppCompatActivity {
@@ -32,7 +31,13 @@ public class CacheActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         bundle = getIntent().getExtras();
-        setTitle(bundle.getString("name"));
+        String[] parts = bundle.getString("location").split("\\|");
+        String location = Location.convert(Double.parseDouble(parts[0]), Location.FORMAT_MINUTES) + "' " + Location.convert(Double.parseDouble(parts[1]), Location.FORMAT_MINUTES) + "'";
+        location = location.replaceAll(":", "\u00B0");
+        getSupportActionBar().setTitle(bundle.getString("name"));
+        getSupportActionBar().setSubtitle(location);
+
+        //getSupportActionBar().setSubtitle(Html.fromHtml("<font style='font-size:20px' color='#ff0000'>" + location + "</font>"));
 
         setContentView(R.layout.activity_cache);
 

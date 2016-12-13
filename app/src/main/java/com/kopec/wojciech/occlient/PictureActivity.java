@@ -15,6 +15,7 @@ public class PictureActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_picture);
 
@@ -22,12 +23,12 @@ public class PictureActivity extends AppCompatActivity {
 
         Bundle bundle = getIntent().getExtras();
         byte[] byteArray = bundle.getByteArray("image");
-        Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-
-        ImageView imageView = (ImageView) findViewById(R.id.picture);
-        imageView.setImageBitmap(bmp);
-
-        PhotoViewAttacher mAttacher = new PhotoViewAttacher(imageView);
-        mAttacher.update();
+        if(byteArray != null){
+            Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+            ImageView imageView = (ImageView) findViewById(R.id.picture);
+            imageView.setImageBitmap(bmp);
+            PhotoViewAttacher mAttacher = new PhotoViewAttacher(imageView);
+            mAttacher.update();
+        }
     }
 }

@@ -34,7 +34,7 @@ public class AuthorizationActivity extends AppCompatActivity {
     private OAuth10aService mService;
     private OAuth1RequestToken requestToken;
     public String verifier = "";
-    private static String authUrl = "YOUR_AUTH_URL";
+    private static String authUrl = "AUTH_URL";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -114,7 +114,7 @@ public class AuthorizationActivity extends AppCompatActivity {
                     Log.d("Oauth Token", oauthToken);
                     Log.d("Oauth Secret Token", oauthSecretToken);
 
-                    final OAuthRequest request = new OAuthRequest(Verb.GET, "http://opencaching.pl/okapi/services/users/user?fields=username|uuid|profile_url", mService);
+                    final OAuthRequest request = new OAuthRequest(Verb.GET, "http://opencaching.pl/okapi/services/users/user?fields=username|uuid|profile_url|home_location", mService);
                     mService.signRequest(accessToken, request);
                     final Response response = request.send();
 
@@ -125,6 +125,12 @@ public class AuthorizationActivity extends AppCompatActivity {
                     mEditor.putString("oauth_token_secret", oauthSecretToken);
                     mEditor.putString("username", json.getString("username"));
                     mEditor.putString("logged_user_uuid", json.getString("uuid"));
+                    if(json.getString("home_location") != null){
+                        String[] parts = json.getString("home_location").split("\\|");
+                        mEditor.putFloat("startMapLat", Float.valueOf(parts[0]));
+                        mEditor.putFloat("startMapLang", Float.valueOf(parts[1]));
+                        mEditor.putFloat("startMapZoom", 10);
+                    }
 
                     if(sharedPreferences.getString("view_map_as_username", "").equals(sharedPreferences.getString("username", "")) || sharedPreferences.getString("user_uuid", "").equals("") ){
                         mEditor.putString("view_map_as_username", json.getString("username"));

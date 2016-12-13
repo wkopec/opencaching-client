@@ -65,6 +65,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="150dp" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/photoDescription"
+                android:layout_marginTop="5dp"
+                android:gravity="center"/>
+
             <com.viewpagerindicator.CirclePageIndicator
                 android:id="@+id/indicator"
                 android:layout_width="match_parent"

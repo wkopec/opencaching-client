@@ -2,6 +2,7 @@ package com.kopec.wojciech.occlient;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.Gravity;
@@ -21,8 +22,10 @@ public final class PlaceSlideFragment extends Fragment {
     }
 
     Bitmap imageResourceId;
+    boolean isSpoiler;
 
-    public PlaceSlideFragment(Bitmap i) {
+    public PlaceSlideFragment(Bitmap i, boolean isSpoiler) {
+        this.isSpoiler = isSpoiler;
         imageResourceId = i;
     }
 
@@ -41,7 +44,7 @@ public final class PlaceSlideFragment extends Fragment {
 
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 imageResourceId.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                byte[] byteArray = stream.toByteArray();
+                byte[] byteArray = stream.toByteArray();;
                 Bundle b = new Bundle();
                 b.putByteArray("image", byteArray);
 
@@ -51,7 +54,14 @@ public final class PlaceSlideFragment extends Fragment {
             }
         });
 
-        image.setImageBitmap(imageResourceId);
+        if(isSpoiler){
+            Bitmap spoilerBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.spoiler);
+            image.setImageBitmap(spoilerBitmap);
+        }
+        else{
+            image.setImageBitmap(imageResourceId);
+        }
+
         LinearLayout layout = new LinearLayout(getActivity());
         layout.setGravity(Gravity.CENTER);
         layout.addView(image);

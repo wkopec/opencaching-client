@@ -202,12 +202,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.action_logout:
 
                 SharedPreferences.Editor Editor = sharedPreferences.edit();
-                Editor.putString("username", "");
-                Editor.putString("logged_user_uuid", "");
-                Editor.putString("oauth_token", "");
-                Editor.putString("oauth_token_secret", "");
+                Editor.remove("username");
+                Editor.remove("logged_user_uuid");
+                Editor.remove("oauth_token");
+                Editor.remove("oauth_token_secret");
                 if(sharedPreferences.getString("view_map_as_username", "").equals(sharedPreferences.getString("username", ""))){
-                    Editor.putString("user_uuid", "");
+                    Editor.remove("user_uuid");
+                    Editor.remove("startMapLat");
+                    Editor.remove("startMapLang");
+                    Editor.remove("startMapZoom");
                 }
                 Editor.apply();
 
@@ -227,7 +230,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 clearMap();
 
                 return true;
-
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -311,7 +313,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void cachesRequest(final ArrayList<String> waypointList, final boolean isSavingOffline) {
 
-        final AsyncTask<Void, Integer, Void> task = new AsyncTask<Void, Integer, Void>() {
+        new AsyncTask<Void, Integer, Void>() {
             boolean isCanceled = false;
             final ProgressDialog mProgressDialog = new ProgressDialog(MapsActivity.this);
             @Override
@@ -792,19 +794,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if(requestCode == 1) {
             if(resultCode == Activity.RESULT_OK){
-
                 String mapCenter = data.getStringExtra("mapCenter");
                 String limit = data.getStringExtra("cacheLimit");
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(50.062271, 19.938301), 10));
-                String[] parts;
-                parts = mapCenter.split("\\|");
+                String[] parts = mapCenter.split("\\|");
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1])), 10));
                 waypointsRequest(mapCenter, limit, true);
-
             }
         }
         if(requestCode == 2){
             if(resultCode == Activity.RESULT_OK){
+                if(sharedPreferences.getFloat("startMapLat", 0) != 0 && sharedPreferences.getFloat("startMapLang", 0) != 0){
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(sharedPreferences.getFloat("startMapLat", 0), sharedPreferences.getFloat("startMapLang", 0)), 10));
+                }
                 loginItem.setVisible(false);
                 logoutItem.setVisible(true);
                 Toast.makeText(MapsActivity.this, getString(R.string.logged_in_successfully), Toast.LENGTH_LONG).show();
