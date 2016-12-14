@@ -11,14 +11,18 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -76,6 +80,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         sharedPreferences = getSharedPreferences("preferences", Context.MODE_PRIVATE);
         jsonPreferences = getSharedPreferences("jsonCacheObjects", Context.MODE_PRIVATE);
 
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkLocationPermission();
+        }
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
@@ -94,50 +102,73 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Set<String> waypointsSet = sharedPreferences.getStringSet("savedWaypoints", new HashSet<String>());
         showWaypoints(new ArrayList<>(waypointsSet));
 
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
+        SharedPreferences.Editor mEditor = sharedPreferences.edit();
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            //User has previously accepted this permission
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                mEditor.putBoolean("isDeviceLocationEnabled", true).apply();
+                mMap.setMyLocationEnabled(true);
             }
         } else {
+            //Not in api-23, no need to prompt
+            mEditor.putBoolean("isDeviceLocationEnabled", true).apply();
             mMap.setMyLocationEnabled(true);
         }
-
-        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng latLng) {
-                if (lastSelectedMarker != null) {
-                    setPreviousMarkerDisable();
-                    lastSelectedMarker = null;
-                }
-                FragmentManager fragmentManager = getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
-                fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
-            }
-        });
-
-        mMap.setOnMarkerClickListener(
-                new GoogleMap.OnMarkerClickListener() {
-                    boolean doNotMoveCameraToCenterMarker = true;
-
-                    public boolean onMarkerClick(Marker marker) {
-                        if(lastSelectedMarker != null && lastSelectedMarker.equals(marker)){
-                            return doNotMoveCameraToCenterMarker;
-                        }
-                        else{
-                            try {
-                                showCacheInfo(marker.getSnippet(), marker);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        return doNotMoveCameraToCenterMarker;
-                    }
-                });
     }
-    private MenuItem menuItem;
-    private MenuItem loginItem;
-    private MenuItem logoutItem;
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                //  TODO: Prompt with explanation!
+
+                //Prompt the user once explanation has been shown
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        mMap.setMyLocationEnabled(true);
+                    }
+                } else {
+                    Toast.makeText(this, "Opcje lokalizacji nie będą dostępne", Toast.LENGTH_LONG).show();
+                }
+            }
+
+        }
+    }
+
+    MenuItem menuItem;
+    MenuItem loginItem;
+    MenuItem logoutItem;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -171,7 +202,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             case R.id.action_filter_caches:
                 if(sharedPreferences.getString("user_uuid", "").equals("")){
-                    Toast.makeText(MapsActivity.this, "Wprowadź użytkownika w ustawieniach", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MapsActivity.this, getString(R.string.set_username_in_settings), Toast.LENGTH_LONG).show();
                 }
                 else{
                     showFilterDialog();
@@ -195,7 +226,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.action_settings:
 
                 Intent settingsIntent = new Intent(this, SettingsActivity.class);
-                startActivity(settingsIntent);
+                startActivityForResult(settingsIntent, 3);
 
                 return true;
 
@@ -253,8 +284,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             protected Void doInBackground(Void... params) {
 
-                if(!isConnectedToServer("http://opencaching.pl/", 5000)){
-                    Toast.makeText(MapsActivity.this, "Brak poczenia z opencaching.pl", Toast.LENGTH_LONG).show();
+                if(isOnline() && !isConnectedToServer("http://opencaching.pl/", 10000)){
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MapsActivity.this, getString(R.string.opencaching_serwer_connection_error), Toast.LENGTH_LONG).show();
+                        }
+                    });
                     cancel(false);
                 }
 
@@ -288,13 +324,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MapsActivity.this, "Brak dostępu do Internetu", Toast.LENGTH_LONG).show();
+                            Toast.makeText(MapsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
                         }
                     });
                 } catch (Exception e) {
                     Log.d("ERROR", e.toString());
                 }
                 return null;
+            }
+
+            @Override
+            protected void onCancelled() {
+                menuItem.collapseActionView();
+                menuItem.setActionView(null);
             }
 
             @Override
@@ -522,6 +564,38 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         break;
                 }
 
+                mMap.setOnMarkerClickListener(
+                new GoogleMap.OnMarkerClickListener() {
+                    boolean doNotMoveCameraToCenterMarker = true;
+                    public boolean onMarkerClick(Marker marker) {
+                        if(lastSelectedMarker != null && lastSelectedMarker.equals(marker)){
+                            return doNotMoveCameraToCenterMarker;
+                        }
+                        else{
+                            try {
+                                showCacheInfo(marker.getSnippet(), marker);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        return doNotMoveCameraToCenterMarker;
+                    }
+                });
+
+                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                    @Override
+                    public void onMapClick(LatLng latLng) {
+                        if (lastSelectedMarker != null) {
+                            setPreviousMarkerDisable();
+                            lastSelectedMarker = null;
+                        }
+                        FragmentManager fragmentManager = getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
+                        fragmentTransaction.remove(globalFragmentMapCacheInfo).commit();
+                    }
+                });
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -574,7 +648,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out);
-        fragmentTransaction.replace(R.id.mainMap, globalFragmentMapCacheInfo).commit();
+        fragmentTransaction.replace(R.id.map, globalFragmentMapCacheInfo).commit();
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), mMap.getCameraPosition().zoom));
     }
 
@@ -727,7 +801,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         waypointsRequest(mapCenterString, limit, false);
                     }
                 })
-                .setNegativeButton("Anuluj", new DialogInterface.OnClickListener() {
+                .setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                         //...
@@ -801,7 +875,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 waypointsRequest(mapCenter, limit, true);
             }
         }
-        if(requestCode == 2){
+        else if(requestCode == 2){
             if(resultCode == Activity.RESULT_OK){
                 if(sharedPreferences.getFloat("startMapLat", 0) != 0 && sharedPreferences.getFloat("startMapLang", 0) != 0){
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(sharedPreferences.getFloat("startMapLat", 0), sharedPreferences.getFloat("startMapLang", 0)), 10));
@@ -812,6 +886,20 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             if(resultCode == Activity.RESULT_CANCELED){
                 Toast.makeText(this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
+            }
+        }
+        else if(requestCode == 3){
+            Log.d("Settings result", String.valueOf(resultCode));
+            if(resultCode == Activity.RESULT_OK){
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    //User has previously accepted this permission
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        //sharedPreferences.getBoolean("isDeviceLocationEnabled", false);
+                        mMap.setMyLocationEnabled(sharedPreferences.getBoolean("isDeviceLocationEnabled", false));
+                    }
+                } else {
+                    mMap.setMyLocationEnabled(sharedPreferences.getBoolean("isDeviceLocationEnabled", false));
+                }
             }
         }
     }
@@ -852,6 +940,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         client.disconnect();
     }
 
+    public boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
 
     public boolean isConnectedToServer(String url, int timeout) {
         try{

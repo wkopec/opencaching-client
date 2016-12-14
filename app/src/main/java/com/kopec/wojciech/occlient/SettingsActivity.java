@@ -1,20 +1,26 @@
 package com.kopec.wojciech.occlient;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -38,7 +44,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
     Preference loggedAsPreference;
     Preference usernamePreferences;
     Preference coordinatesPreferences;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -58,48 +63,72 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
 
             if(preference.getKey().equals("prefUsername")){
                 usernamePreferences = preference;
-                preference.setSummary(sharedPreferences.getString("view_map_as_username", ""));
-                String response = "";
-                try {
-                    if(!value.toString().equals("")){
-                        response = new MapUsername(value.toString()).execute().get();
-                    }
-                    if(response.equals("") && !sharedPreferences.getString("username", "").equals("")){
-                        response = new MapUsername(sharedPreferences.getString("username", "")).execute().get();
-                    }
-                    else if(response.equals("")){
-                        SharedPreferences.Editor mEditor = sharedPreferences.edit();
-                        mEditor.putString("view_map_as_username", "");
-                        mEditor.putString("user_uuid", "").apply();
-                        preference.setSummary("");
-                    }
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                if(!value.toString().equals("") && sharedPreferences.getString("view_map_as_username", "").equals(value.toString())){
+                    preference.setSummary(sharedPreferences.getString("view_map_as_username", ""));
                 }
-                if(response!=null && !response.equals("")) {
-                    preference.setSummary(response);
+                else if((value.toString().equals("") || sharedPreferences.getString("previousPrefMapUsernameValue", "").equals(value.toString())) && !sharedPreferences.getString("username", "").equals("")){
+                    preference.setSummary(sharedPreferences.getString("username", ""));
                 }
+                else if(!sharedPreferences.getString("previousPrefMapUsernameValue", "").equals(value.toString())){
+                    if(isOnline()){
+                        String response = "";
+                        try {
+                            if(!value.toString().equals("")){
+                                response = new MapUsername(value.toString()).execute().get();
+                            }
+                            if(response.equals("") && !sharedPreferences.getString("username", "").equals("")){
+                                response = new MapUsername(sharedPreferences.getString("username", "")).execute().get();
+                            }
+                            else if(response.equals("")){
+                                SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                                mEditor.putString("view_map_as_username", "");
+                                mEditor.putString("user_uuid", "").apply();
+                                preference.setSummary("");
+                            }
+                        } catch (InterruptedException | ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                        if(response!=null && !response.equals("")) {
+                            preference.setSummary(response);
+                        }
+                    }
+                    else{
+                        Toast.makeText(SettingsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
+                    }
+                }
+                SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                mEditor.putString("previousPrefMapUsernameValue", value.toString()).apply();
+
             }
             else if(preference.getKey().equals("prefLoggedAs")){
-                if(!sharedPreferences.getString("username", "").equals("")) {
-                    preference.setSummary(sharedPreferences.getString("username", getString(R.string.logged_as_summary)));
-                }
-                else preference.setSummary(getString(R.string.logged_as_summary));
+                preference.setSummary(sharedPreferences.getString("username", getString(R.string.logged_as_summary)));
             }
             else if(preference.getKey().equals("prefCoordinates")){
                 coordinatesPreferences = preference;
-                if(sharedPreferences.getFloat("startMapLat", 0) != 0 && sharedPreferences.getFloat("startMapLang", 0) != 0){
-                    try {
-                        onReturnMapCenter(new LatLng(sharedPreferences.getFloat("startMapLat", 0), sharedPreferences.getFloat("startMapLang", 0)), 10);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                sharedPreferences.getString("startMapCoordinates", "");
+            }
+            else if(preference.getKey().equals("prefDeviceLocation")){
+                SharedPreferences.Editor mEditor = sharedPreferences.edit();
+                if(Boolean.valueOf(value.toString())){
+                    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if(checkLocationPermission()){
+                            mEditor.putBoolean("isDeviceLocationEnabled", true).apply();
+                        }
+                        else{
+                            mEditor.putBoolean("isDeviceLocationEnabled", false).apply();
+                            //TODO: change checkbox to false
+                        }
                     }
+                }
+                else {
+                    mEditor.putBoolean("isDeviceLocationEnabled", false).apply();
                 }
             }
 
             return true;
         }
     };
+
     private Preference.OnPreferenceClickListener onPreferenceClick = new Preference.OnPreferenceClickListener(){
         @Override
         public boolean onPreferenceClick(Preference preference) {
@@ -124,12 +153,19 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
     private void bindPreferenceListeners(Preference preference){
 
         preference.setOnPreferenceChangeListener(onPreferenceChange);
-        onPreferenceChange.onPreferenceChange(preference,
-                PreferenceManager
-                        .getDefaultSharedPreferences(preference.getContext())
-                        .getString(preference.getKey(), ""));
-
-        preference.setOnPreferenceClickListener(onPreferenceClick);
+        if(preference instanceof CheckBoxPreference){
+            onPreferenceChange.onPreferenceChange(preference,
+                    PreferenceManager
+                            .getDefaultSharedPreferences(preference.getContext())
+                            .getBoolean(preference.getKey(), true));
+        }
+        else{
+            preference.setOnPreferenceClickListener(onPreferenceClick);
+            onPreferenceChange.onPreferenceChange(preference,
+                    PreferenceManager
+                            .getDefaultSharedPreferences(preference.getContext())
+                            .getString(preference.getKey(), ""));
+        }
     }
 
     private void setupActionBar() {
@@ -159,6 +195,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
             bindPreferenceListeners(findPreference("prefCoordinates"));
             bindPreferenceListeners(findPreference("prefUsername"));
             bindPreferenceListeners(findPreference("prefLoggedAs"));
+            bindPreferenceListeners(findPreference("prefDeviceLocation"));
         }
     }
 
@@ -169,16 +206,14 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
             this.stringValue = stringValue;
         }
 
-        String user_uuid;
         @Override
         protected String doInBackground(Void... arg0) {
             try {
                 String urlString = "http://opencaching.pl/okapi/services/users/by_username?consumer_key=" + getString(R.string.OKAPIConsumerKey) + "&fields=uuid" + "&username=" + stringValue;
                 JSONObject jsonObj = jsonObjectRequest(new URL(urlString));
-                user_uuid = jsonObj.getString("uuid");
                 SharedPreferences.Editor mEditor = sharedPreferences.edit();
                 mEditor.putString("view_map_as_username", stringValue);
-                mEditor.putString("user_uuid", user_uuid).apply();
+                mEditor.putString("user_uuid", jsonObj.getString("uuid")).apply();
 
             } catch (UnknownHostException uhe) {
                 runOnUiThread(new Runnable() {
@@ -188,6 +223,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                     }
                 });
             }
+
             catch (FileNotFoundException fnfe){
                 stringValue = "";
                 SharedPreferences.Editor mEditor = sharedPreferences.edit();
@@ -209,7 +245,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if (requestCode == 2) {
+        if(requestCode == 2){
             if(resultCode == Activity.RESULT_OK){
                 loggedAsPreference.setSummary(data.getStringExtra("username"));
                 if(usernamePreferences.getSummary().equals("") || usernamePreferences.getSummary().equals(data.getStringExtra("username"))){
@@ -232,6 +268,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
                 Toast.makeText(SettingsActivity.this, getString(R.string.internet_connection_error), Toast.LENGTH_LONG).show();
             }
         }
+
     }
 
     public void onReturnMapCenter(LatLng mapCenterLatLng, float mapZoom) throws IOException {
@@ -240,14 +277,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
         mEditor.putFloat("startMapLang", (float)mapCenterLatLng.longitude);
         mEditor.putFloat("startMapZoom", mapZoom);
 
-        Log.d("Lat", String.valueOf(mapCenterLatLng.latitude));
-        Log.d("Lang", String.valueOf(mapCenterLatLng.longitude));
-        Log.d("Zoom", String.valueOf(mapZoom));
-
         Geocoder gcd = new Geocoder(SettingsActivity.this, Locale.getDefault());
         List<Address> addresses = gcd.getFromLocation(mapCenterLatLng.latitude, mapCenterLatLng.longitude, 1);
-
-        Log.d("Lokalizacja", addresses.toString());
 
         if(addresses.size() > 0){
             if(addresses.get(0).getLocality() != null){
@@ -282,6 +313,61 @@ public class SettingsActivity extends AppCompatPreferenceActivity{
         return new JSONObject(String.valueOf(buffer));
     }
 
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                endActivity();
+                break;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+        return false;
+    }
+
+    @Override
+    public void onBackPressed() {
+        endActivity();
+    }
+
+    private void endActivity(){
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("test", "dziala");
+        setResult(Activity.RESULT_OK, returnIntent);
+        finish();
+    }
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                //  TODO: Prompt with explanation!
+
+                //Prompt the user once explanation has been shown
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
     public boolean isOnline() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();

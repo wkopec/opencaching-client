@@ -141,7 +141,7 @@ public class AuthorizationActivity extends AppCompatActivity {
                     Intent returnIntent = new Intent();
                     returnIntent.putExtra("username", json.getString("username"));
                     returnIntent.putExtra("user_uuid", json.getString("uuid"));
-                    setResult(Activity.RESULT_OK,returnIntent);
+                    setResult(Activity.RESULT_OK, returnIntent);
                     finish();
 
                 } catch (IOException | JSONException e) {

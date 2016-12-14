@@ -34,7 +34,8 @@ public class CacheActivity extends AppCompatActivity {
         String[] parts = bundle.getString("location").split("\\|");
         String location = Location.convert(Double.parseDouble(parts[0]), Location.FORMAT_MINUTES) + "' " + Location.convert(Double.parseDouble(parts[1]), Location.FORMAT_MINUTES) + "'";
         location = location.replaceAll(":", "\u00B0");
-        getSupportActionBar().setTitle(bundle.getString("name"));
+        location = location.replaceAll(",", ".");
+        getSupportActionBar().setTitle(bundle.getString("waypoint"));
         getSupportActionBar().setSubtitle(location);
 
         //getSupportActionBar().setSubtitle(Html.fromHtml("<font style='font-size:20px' color='#ff0000'>" + location + "</font>"));
@@ -101,6 +102,15 @@ public class CacheActivity extends AppCompatActivity {
                 startActivity(intent);
 
                 return true;
+
+            case R.id.action_compass:
+
+                Intent compassIntent = new Intent(this, CompassActivity.class);
+                compassIntent.putExtras(bundle);
+                startActivity(compassIntent);
+
+                return true;
+
             case R.id.action_settings:
 
                 return true;

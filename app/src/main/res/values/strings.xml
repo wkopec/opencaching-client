@@ -82,6 +82,12 @@
     <string name="sub_admin">Powiat</string>
     <string name="choose_coordinates">Wybierz lokalizację</string>
     <string name="set_username_in_settings">Wprowadź użytkownika w ustawieniach</string>
+    <string name="compass">Kompas</string>
+    <string name="action_compass">kompas</string>
+    <string name="devices_location">Lokalizacja urządzenia</string>
+    <string name="opencaching_serwer_connection_error">Nie udało się połączyć z opencaching.pl</string>
+    <string name="localization_disable">Lokalizacja wyłączona</string>
+    <string name="do_set_localization_enable">Włączyć lokalizację teraz?</string>
 
     <string-array name="filters">
         <item>@string/found</item>
